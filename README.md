@@ -1,6 +1,6 @@
 <div align="center">
 
-# WP Conversion Hub
+![WP Conversion Hub](.github/header.png)
 
 [![License](https://img.shields.io/badge/LICENSE-GPL--2.0-5C9E31?style=for-the-badge)](LICENSE)
 [![WordPress](https://img.shields.io/badge/WORDPRESS-6.2%2B-21759B?style=for-the-badge&logo=wordpress&logoColor=white)](https://wordpress.org)
