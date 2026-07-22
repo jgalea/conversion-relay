@@ -80,6 +80,7 @@ final class Plugin {
 			Destinations\PostHog::class,
 			Destinations\MetaAds::class,
 			Destinations\GoogleAds::class,
+			Destinations\Vireo::class,
 		);
 		foreach ( $destinations as $class ) {
 			if ( class_exists( $class ) ) {

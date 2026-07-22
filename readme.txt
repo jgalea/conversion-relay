@@ -38,6 +38,7 @@ Destinations in this release:
 * PostHog
 * Meta (Facebook) Ads — Pixel + Conversions API
 * Google Ads
+* Vireo Analytics (same-site, server-side)
 
 New sources and destinations register through simple filters, so the list grows
 without touching the core.

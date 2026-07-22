@@ -38,7 +38,8 @@ Forms · WordPress core (search, login, registration).
 ## Destinations
 
 Google Analytics 4 (client + Measurement Protocol) · Plausible · Fathom · Umami ·
-PostHog · Meta Ads (Pixel + Conversions API) · Google Ads.
+PostHog · Meta Ads (Pixel + Conversions API) · Google Ads · Vireo Analytics
+(same-site, server-side).
 
 ## Privacy
 
