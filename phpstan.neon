@@ -1,0 +1,14 @@
+includes:
+	- vendor/szepeviktor/phpstan-wordpress/extension.neon
+
+parameters:
+	level: 5
+	paths:
+		- src
+	bootstrapFiles:
+		- tests/phpstan-bootstrap.php
+	scanDirectories:
+		- vendor
+	ignoreErrors:
+		- '#unknown class WP_CLI#'
+		- '#Function WP_CLI\\Utils\\format_items not found#'

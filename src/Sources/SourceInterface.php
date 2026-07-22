@@ -1,0 +1,29 @@
+<?php
+
+declare( strict_types=1 );
+
+namespace WPConversionHub\Sources;
+
+use WPConversionHub\Hub\Dispatcher;
+
+interface SourceInterface {
+
+	public function id(): string;
+
+	public function label(): string;
+
+	/**
+	 * Whether the underlying plugin is present. Sources must not hook when false.
+	 */
+	public function is_available(): bool;
+
+	/**
+	 * Attach the plugin's hooks. Called only when the source is enabled and available.
+	 */
+	public function register( Dispatcher $hub ): void;
+
+	/**
+	 * @return string[] EventType constants this source can emit.
+	 */
+	public function supported_events(): array;
+}

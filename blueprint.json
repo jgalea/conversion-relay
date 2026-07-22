@@ -1,0 +1,15 @@
+{
+    "$schema": "https://playground.wordpress.net/blueprint-schema.json",
+    "landingPage": "/wp-admin/options-general.php?page=wp-conversion-hub",
+    "preferredVersions": {
+        "php": "8.2",
+        "wp": "latest"
+    },
+    "login": true,
+    "steps": [
+        {
+            "step": "activatePlugin",
+            "pluginPath": "wp-conversion-hub/wp-conversion-hub.php"
+        }
+    ]
+}
