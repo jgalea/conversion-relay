@@ -4,6 +4,7 @@ declare( strict_types=1 );
 
 namespace WPConversionHub\Event;
 
+/** The closed set of conversion event types every source and destination agrees on. */
 final class EventType {
 
 	public const PURCHASE        = 'purchase';

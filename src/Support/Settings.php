@@ -4,6 +4,7 @@ declare( strict_types=1 );
 
 namespace WPConversionHub\Support;
 
+/** Reads and writes the single `wpch_settings` option; request-scoped cache avoids repeat lookups. */
 final class Settings {
 
 	private const OPTION = 'wpch_settings';

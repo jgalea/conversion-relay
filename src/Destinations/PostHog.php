@@ -35,12 +35,12 @@ final class PostHog extends AbstractDestination {
 	public function settings_fields(): array {
 		return array(
 			'api_key' => array(
-				'label'  => 'API key',
+				'label'  => __( 'API key', 'wp-conversion-hub' ),
 				'type'   => 'text',
 				'secret' => true,
 			),
 			'host'    => array(
-				'label'   => 'Host',
+				'label'   => __( 'Host', 'wp-conversion-hub' ),
 				'type'    => 'text',
 				'default' => 'https://us.i.posthog.com',
 				'secret'  => false,
@@ -62,7 +62,7 @@ final class PostHog extends AbstractDestination {
 	public function send_server( NormalizedEvent $event ): DeliveryResult {
 		$api_key = $this->get( 'api_key' );
 		if ( '' === $api_key ) {
-			return DeliveryResult::failure( 'No PostHog API key configured.' );
+			return DeliveryResult::failure( __( 'No PostHog API key configured.', 'wp-conversion-hub' ) );
 		}
 
 		$host = rtrim( $this->get( 'host', 'https://us.i.posthog.com' ), '/' );

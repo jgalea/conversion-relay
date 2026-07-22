@@ -83,10 +83,21 @@ final class Frontend {
 			'/event',
 			array(
 				'methods'             => 'POST',
-				'permission_callback' => '__return_true',
+				'permission_callback' => array( $this, 'rest_permission' ),
 				'callback'            => array( $this, 'rest_event' ),
 			)
 		);
+	}
+
+	/**
+	 * Open to logged-out visitors by design: client-origin events (scroll, time on
+	 * page, play) fire on public pages. The core `wp_rest` nonce only proves the
+	 * request came from this site's own bridge.js, not that the visitor is authenticated.
+	 *
+	 * @param \WP_REST_Request $request
+	 */
+	public function rest_permission( $request ): bool {
+		return (bool) wp_verify_nonce( (string) $request->get_header( 'X-WP-Nonce' ), 'wp_rest' );
 	}
 
 	/**
@@ -94,10 +105,6 @@ final class Frontend {
 	 * @return \WP_REST_Response
 	 */
 	public function rest_event( $request ) {
-		if ( ! wp_verify_nonce( (string) $request->get_header( 'X-WP-Nonce' ), 'wp_rest' ) ) {
-			return new \WP_REST_Response( array( 'ok' => false ), 403 );
-		}
-
 		$type = sanitize_key( (string) $request->get_param( 'type' ) );
 		if ( ! \WPConversionHub\Event\EventType::is_valid( $type ) ) {
 			return new \WP_REST_Response( array( 'ok' => false ), 400 );

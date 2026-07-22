@@ -45,17 +45,17 @@ final class MetaAds extends AbstractDestination {
 	public function settings_fields(): array {
 		return array(
 			'pixel_id'        => array(
-				'label'  => 'Pixel ID',
+				'label'  => __( 'Pixel ID', 'wp-conversion-hub' ),
 				'type'   => 'text',
 				'secret' => false,
 			),
 			'access_token'    => array(
-				'label'  => 'Access token',
+				'label'  => __( 'Access token', 'wp-conversion-hub' ),
 				'type'   => 'text',
 				'secret' => true,
 			),
 			'test_event_code' => array(
-				'label'  => 'Test event code',
+				'label'  => __( 'Test event code', 'wp-conversion-hub' ),
 				'type'   => 'text',
 				'secret' => false,
 			),
@@ -73,7 +73,7 @@ final class MetaAds extends AbstractDestination {
 	public function send_server( NormalizedEvent $event ): DeliveryResult {
 		$access_token = $this->get( 'access_token' );
 		if ( '' === $access_token ) {
-			return DeliveryResult::failure( 'No Meta access token configured.' );
+			return DeliveryResult::failure( __( 'No Meta access token configured.', 'wp-conversion-hub' ) );
 		}
 
 		$user_data = array_merge(

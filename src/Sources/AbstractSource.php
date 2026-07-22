@@ -7,6 +7,7 @@ namespace WPConversionHub\Sources;
 use WPConversionHub\Event\NormalizedEvent;
 use WPConversionHub\Hub\Dispatcher;
 
+/** Wires a source's hooks only once registered, and fills in the fields common to every emitted event. */
 abstract class AbstractSource implements SourceInterface {
 
 	protected ?Dispatcher $hub = null;

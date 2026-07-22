@@ -4,6 +4,7 @@ declare( strict_types=1 );
 
 namespace WPConversionHub\Destinations;
 
+/** Outcome of one server-transport delivery attempt: ok/failure, a short message, and the HTTP code. */
 final class DeliveryResult {
 
 	private bool $ok;

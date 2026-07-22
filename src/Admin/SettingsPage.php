@@ -30,8 +30,8 @@ final class SettingsPage {
 
 	public function menu(): void {
 		add_options_page(
-			'WP Conversion Hub',
-			'Conversion Hub',
+			__( 'WP Conversion Hub', 'wp-conversion-hub' ),
+			__( 'Conversion Hub', 'wp-conversion-hub' ),
 			self::CAP,
 			self::SLUG,
 			array( $this, 'render' )
@@ -44,15 +44,15 @@ final class SettingsPage {
 		}
 		$tab  = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'destinations'; // phpcs:ignore WordPress.Security.NonceVerification
 		$tabs = array(
-			'destinations' => 'Destinations',
-			'sources'      => 'Sources',
-			'consent'      => 'Consent',
-			'status'       => 'Status',
+			'destinations' => __( 'Destinations', 'wp-conversion-hub' ),
+			'sources'      => __( 'Sources', 'wp-conversion-hub' ),
+			'consent'      => __( 'Consent', 'wp-conversion-hub' ),
+			'status'       => __( 'Status', 'wp-conversion-hub' ),
 		);
 
-		echo '<div class="wrap"><h1>WP Conversion Hub</h1>';
+		echo '<div class="wrap"><h1>' . esc_html__( 'WP Conversion Hub', 'wp-conversion-hub' ) . '</h1>';
 		if ( isset( $_GET['updated'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
-			echo '<div class="notice notice-success is-dismissible"><p>Settings saved.</p></div>';
+			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Settings saved.', 'wp-conversion-hub' ) . '</p></div>';
 		}
 
 		echo '<h2 class="nav-tab-wrapper">';
@@ -92,17 +92,23 @@ final class SettingsPage {
 			$id  = $dest->id();
 			$cfg = Settings::dest_config( $id );
 			echo '<tr><th colspan="2"><h3>' . esc_html( $dest->label() ) . '</h3></th></tr>';
+			$enabled_label = sprintf(
+				/* translators: %s: destination name, e.g. "Google Analytics 4". */
+				__( 'Send conversions to %s', 'wp-conversion-hub' ),
+				$dest->label()
+			);
 			printf(
-				'<tr><th scope="row">Enabled</th><td><label><input type="checkbox" name="dest[%s][enabled]" value="1" %s /> Send conversions to %s</label></td></tr>',
+				'<tr><th scope="row">%s</th><td><label><input type="checkbox" name="dest[%s][enabled]" value="1" %s /> %s</label></td></tr>',
+				esc_html__( 'Enabled', 'wp-conversion-hub' ),
 				esc_attr( $id ),
 				checked( ! empty( $cfg['enabled'] ), true, false ),
-				esc_html( $dest->label() )
+				esc_html( $enabled_label )
 			);
 			foreach ( $dest->settings_fields() as $key => $field ) {
 				$is_secret = ! empty( $field['secret'] );
 				$value     = (string) ( $cfg[ $key ] ?? '' );
 				$display   = $is_secret && '' !== $value ? '' : $value;
-				$ph        = $is_secret && '' !== $value ? '••••••••  (saved — leave blank to keep)' : '';
+				$ph        = $is_secret && '' !== $value ? __( '••••••••  (saved — leave blank to keep)', 'wp-conversion-hub' ) : '';
 				printf(
 					'<tr><th scope="row">%s</th><td><input type="text" class="regular-text" name="dest[%s][%s]" value="%s" placeholder="%s" autocomplete="off" /></td></tr>',
 					esc_html( (string) $field['label'] ),
@@ -123,18 +129,19 @@ final class SettingsPage {
 			$all     = Settings::all();
 			$scfg    = $all['sources'][ $id ] ?? array();
 			$channel = Settings::source_channel( $id );
-			$avail   = $source->is_available() ? '' : ' <em>(plugin not active)</em>';
+			$avail   = $source->is_available() ? '' : ' <em>' . esc_html__( '(plugin not active)', 'wp-conversion-hub' ) . '</em>';
 			echo '<tr><th scope="row">' . esc_html( $source->label() ) . wp_kses_post( $avail ) . '</th><td>';
 			printf(
-				'<label><input type="checkbox" name="src[%s][enabled]" value="1" %s /> Track</label> &nbsp; ',
+				'<label><input type="checkbox" name="src[%s][enabled]" value="1" %s /> %s</label> &nbsp; ',
 				esc_attr( $id ),
-				checked( ! empty( $scfg['enabled'] ), true, false )
+				checked( ! empty( $scfg['enabled'] ), true, false ),
+				esc_html__( 'Track', 'wp-conversion-hub' )
 			);
-			echo 'Channel: <select name="src[' . esc_attr( $id ) . '][channel]">';
+			echo esc_html__( 'Channel:', 'wp-conversion-hub' ) . ' <select name="src[' . esc_attr( $id ) . '][channel]">';
 			foreach ( array(
-				'both'        => 'Server + client',
-				'server_only' => 'Server only',
-				'client_only' => 'Client only',
+				'both'        => __( 'Server + client', 'wp-conversion-hub' ),
+				'server_only' => __( 'Server only', 'wp-conversion-hub' ),
+				'client_only' => __( 'Client only', 'wp-conversion-hub' ),
 			) as $val => $label ) {
 				printf( '<option value="%s" %s>%s</option>', esc_attr( $val ), selected( $channel, $val, false ), esc_html( $label ) );
 			}
@@ -147,39 +154,53 @@ final class SettingsPage {
 		$c = Settings::consent();
 		echo '<table class="form-table" role="presentation"><tbody>';
 		printf(
-			'<tr><th scope="row">Require consent</th><td><label><input type="checkbox" name="consent[require_consent]" value="1" %s /> Gate destinations on consent</label></td></tr>',
-			checked( ! empty( $c['require_consent'] ), true, false )
+			'<tr><th scope="row">%s</th><td><label><input type="checkbox" name="consent[require_consent]" value="1" %s /> %s</label></td></tr>',
+			esc_html__( 'Require consent', 'wp-conversion-hub' ),
+			checked( ! empty( $c['require_consent'] ), true, false ),
+			esc_html__( 'Gate destinations on consent', 'wp-conversion-hub' )
 		);
 		printf(
-			'<tr><th scope="row">Respect DNT</th><td><label><input type="checkbox" name="consent[respect_dnt]" value="1" %s /> Honor the browser Do Not Track header</label></td></tr>',
-			checked( ! empty( $c['respect_dnt'] ), true, false )
+			'<tr><th scope="row">%s</th><td><label><input type="checkbox" name="consent[respect_dnt]" value="1" %s /> %s</label></td></tr>',
+			esc_html__( 'Respect DNT', 'wp-conversion-hub' ),
+			checked( ! empty( $c['respect_dnt'] ), true, false ),
+			esc_html__( 'Honor the browser Do Not Track header', 'wp-conversion-hub' )
 		);
 		foreach ( array(
-			'analytics_default' => 'Analytics default',
-			'ads_default'       => 'Advertising default',
+			'analytics_default' => __( 'Analytics default', 'wp-conversion-hub' ),
+			'ads_default'       => __( 'Advertising default', 'wp-conversion-hub' ),
 		) as $key => $label ) {
 			echo '<tr><th scope="row">' . esc_html( $label ) . '</th><td><select name="consent[' . esc_attr( $key ) . ']">';
 			foreach ( array(
-				'granted' => 'Granted',
-				'denied'  => 'Denied',
+				'granted' => __( 'Granted', 'wp-conversion-hub' ),
+				'denied'  => __( 'Denied', 'wp-conversion-hub' ),
 			) as $val => $vlabel ) {
 				printf( '<option value="%s" %s>%s</option>', esc_attr( $val ), selected( (string) ( $c[ $key ] ?? '' ), $val, false ), esc_html( $vlabel ) );
 			}
 			echo '</select></td></tr>';
 		}
 		printf(
-			'<tr><th scope="row">Enhanced conversions</th><td><label><input type="checkbox" name="enhanced_conversions" value="1" %s /> Hash and send first-party customer data (opt-in)</label></td></tr>',
-			checked( Settings::enhanced_conversions_enabled(), true, false )
+			'<tr><th scope="row">%s</th><td><label><input type="checkbox" name="enhanced_conversions" value="1" %s /> %s</label></td></tr>',
+			esc_html__( 'Enhanced conversions', 'wp-conversion-hub' ),
+			checked( Settings::enhanced_conversions_enabled(), true, false ),
+			esc_html__( 'Hash and send first-party customer data (opt-in)', 'wp-conversion-hub' )
 		);
 		echo '</tbody></table>';
 	}
 
 	private function render_status(): void {
-		echo '<p>Most recent delivery attempts.</p>';
-		echo '<table class="widefat striped"><thead><tr><th>Time</th><th>Type</th><th>Source</th><th>Destination</th><th>Status</th><th>Attempts</th><th>Response</th></tr></thead><tbody>';
+		echo '<p>' . esc_html__( 'Most recent delivery attempts.', 'wp-conversion-hub' ) . '</p>';
+		echo '<table class="widefat striped"><thead><tr>'
+			. '<th>' . esc_html__( 'Time', 'wp-conversion-hub' ) . '</th>'
+			. '<th>' . esc_html__( 'Type', 'wp-conversion-hub' ) . '</th>'
+			. '<th>' . esc_html__( 'Source', 'wp-conversion-hub' ) . '</th>'
+			. '<th>' . esc_html__( 'Destination', 'wp-conversion-hub' ) . '</th>'
+			. '<th>' . esc_html__( 'Status', 'wp-conversion-hub' ) . '</th>'
+			. '<th>' . esc_html__( 'Attempts', 'wp-conversion-hub' ) . '</th>'
+			. '<th>' . esc_html__( 'Response', 'wp-conversion-hub' ) . '</th>'
+			. '</tr></thead><tbody>';
 		$rows = EventLog::recent( 50 );
 		if ( empty( $rows ) ) {
-			echo '<tr><td colspan="7">No events yet.</td></tr>';
+			echo '<tr><td colspan="7">' . esc_html__( 'No events yet.', 'wp-conversion-hub' ) . '</td></tr>';
 		}
 		foreach ( $rows as $row ) {
 			printf(
@@ -198,7 +219,7 @@ final class SettingsPage {
 
 	public function save(): void {
 		if ( ! current_user_can( self::CAP ) || ! check_admin_referer( 'wpch_save' ) ) {
-			wp_die( 'Unauthorized', '', array( 'response' => 403 ) );
+			wp_die( esc_html__( 'Unauthorized', 'wp-conversion-hub' ), '', array( 'response' => 403 ) );
 		}
 
 		$tab      = isset( $_POST['tab'] ) ? sanitize_key( wp_unslash( $_POST['tab'] ) ) : '';

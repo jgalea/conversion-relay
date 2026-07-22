@@ -35,12 +35,12 @@ final class Umami extends AbstractDestination {
 	public function settings_fields(): array {
 		return array(
 			'website_id' => array(
-				'label'  => 'Website ID',
+				'label'  => __( 'Website ID', 'wp-conversion-hub' ),
 				'type'   => 'text',
 				'secret' => false,
 			),
 			'host'       => array(
-				'label'   => 'Host (https://cloud.umami.is or self-hosted)',
+				'label'   => __( 'Host (https://cloud.umami.is or self-hosted)', 'wp-conversion-hub' ),
 				'type'    => 'text',
 				'secret'  => false,
 				'default' => 'https://cloud.umami.is',

@@ -46,12 +46,12 @@ final class Ga4 extends AbstractDestination {
 	public function settings_fields(): array {
 		return array(
 			'measurement_id' => array(
-				'label'  => 'Measurement ID (G-XXXXXXX)',
+				'label'  => __( 'Measurement ID (G-XXXXXXX)', 'wp-conversion-hub' ),
 				'type'   => 'text',
 				'secret' => false,
 			),
 			'api_secret'     => array(
-				'label'  => 'Measurement Protocol API secret',
+				'label'  => __( 'Measurement Protocol API secret', 'wp-conversion-hub' ),
 				'type'   => 'text',
 				'secret' => true,
 			),
@@ -69,7 +69,7 @@ final class Ga4 extends AbstractDestination {
 	public function send_server( NormalizedEvent $event ): DeliveryResult {
 		$api_secret = $this->get( 'api_secret' );
 		if ( '' === $api_secret ) {
-			return DeliveryResult::failure( 'No Measurement Protocol API secret configured.' );
+			return DeliveryResult::failure( __( 'No Measurement Protocol API secret configured.', 'wp-conversion-hub' ) );
 		}
 
 		$client_id = (string) ( $event->identity['client_id'] ?? '' );

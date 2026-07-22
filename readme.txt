@@ -1,14 +1,14 @@
 === WP Conversion Hub ===
-Contributors: jeangalea
+Contributors: jeangalea, alkesh7
 Tags: analytics, conversion tracking, google analytics, meta pixel, ecommerce
 Requires at least: 6.2
-Tested up to: 6.8
+Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 0.1.0
+Stable tag: 0.1.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-No-code bridge from WordPress plugin events to analytics and ad platforms. Open, extensible, no tag manager.
+Route WooCommerce, EDD, and form-plugin conversions to GA4, Meta, Google Ads, Plausible, and more analytics platforms — no tag manager, no code.
 
 == Description ==
 
@@ -62,6 +62,13 @@ Settings → Conversion Hub → Status lists recent delivery attempts, including
 failures and retries. `wp conversion-hub status` shows the same from the CLI.
 
 == Changelog ==
+
+= 0.1.1 =
+* Confirmed compatibility with WordPress 7.0.
+* Hardened the client REST endpoint to verify its nonce in `permission_callback` instead of inside the route handler.
+* Switched the custom table's `DROP TABLE` queries to `$wpdb->prepare()` with the `%i` identifier placeholder for consistency with the rest of the plugin's queries.
+* Made the Settings screen, destination field labels, delivery-status messages, and WP-CLI output fully translatable.
+* Added maintainer docblocks across the source tree.
 
 = 0.1.0 =
 * Initial release: event hub, durable async delivery, six sources, seven destinations.

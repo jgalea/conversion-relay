@@ -8,6 +8,7 @@ use WPConversionHub\Event\NormalizedEvent;
 use WPConversionHub\Support\Hashing;
 use WPConversionHub\Support\Settings;
 
+/** Shared config lookup and HTTP delivery helpers so concrete destinations only implement what differs. */
 abstract class AbstractDestination implements DestinationInterface {
 
 	public function consent_category(): string {
@@ -30,7 +31,7 @@ abstract class AbstractDestination implements DestinationInterface {
 	}
 
 	public function send_server( NormalizedEvent $event ): DeliveryResult {
-		return DeliveryResult::failure( 'Server transport not implemented.' );
+		return DeliveryResult::failure( __( 'Server transport not implemented.', 'wp-conversion-hub' ) );
 	}
 
 	protected function get( string $key, string $default = '' ): string {
@@ -92,6 +93,14 @@ abstract class AbstractDestination implements DestinationInterface {
 			return DeliveryResult::success( (string) wp_remote_retrieve_body( $response ), $code );
 		}
 
-		return DeliveryResult::failure( 'HTTP ' . $code . ': ' . wp_remote_retrieve_body( $response ), $code );
+		return DeliveryResult::failure(
+			sprintf(
+				/* translators: 1: HTTP status code, 2: response body from the destination. */
+				__( 'HTTP %1$d: %2$s', 'wp-conversion-hub' ),
+				$code,
+				wp_remote_retrieve_body( $response )
+			),
+			$code
+		);
 	}
 }

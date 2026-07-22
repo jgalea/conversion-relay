@@ -9,4 +9,5 @@ delete_option( 'wpch_db_version' );
 
 global $wpdb;
 $table = $wpdb->prefix . 'wpch_events';
-$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $table ) );

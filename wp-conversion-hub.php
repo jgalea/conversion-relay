@@ -3,7 +3,7 @@
  * Plugin Name:       WP Conversion Hub
  * Plugin URI:        https://github.com/jgalea/wp-conversion-hub
  * Description:       No-code bridge from WordPress plugin events to analytics and ad platforms. Open alternative to tag-manager conversion tracking.
- * Version:           0.1.0
+ * Version:           0.1.1
  * Requires at least: 6.2
  * Requires PHP:      7.4
  * License:           GPL-2.0-or-later
@@ -17,7 +17,7 @@ namespace WPConversionHub;
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'WPCH_VERSION', '0.1.0' );
+define( 'WPCH_VERSION', '0.1.1' );
 define( 'WPCH_FILE', __FILE__ );
 define( 'WPCH_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WPCH_URL', plugin_dir_url( __FILE__ ) );

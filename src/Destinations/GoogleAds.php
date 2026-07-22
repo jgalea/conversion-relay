@@ -36,12 +36,12 @@ final class GoogleAds extends AbstractDestination {
 	public function settings_fields(): array {
 		return array(
 			'conversion_id'    => array(
-				'label'  => 'Conversion ID (AW-XXXXXXXXX)',
+				'label'  => __( 'Conversion ID (AW-XXXXXXXXX)', 'wp-conversion-hub' ),
 				'type'   => 'text',
 				'secret' => false,
 			),
 			'conversion_label' => array(
-				'label'  => 'Conversion label',
+				'label'  => __( 'Conversion label', 'wp-conversion-hub' ),
 				'type'   => 'text',
 				'secret' => false,
 			),

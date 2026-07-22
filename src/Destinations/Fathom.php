@@ -29,7 +29,7 @@ final class Fathom extends AbstractDestination {
 	public function settings_fields(): array {
 		return array(
 			'site_id' => array(
-				'label'  => 'Site ID (ABCDEFGH)',
+				'label'  => __( 'Site ID (ABCDEFGH)', 'wp-conversion-hub' ),
 				'type'   => 'text',
 				'secret' => false,
 			),

@@ -25,7 +25,7 @@ final class Commands {
 			$counts[ $status ] = ( $counts[ $status ] ?? 0 ) + 1;
 		}
 		if ( empty( $counts ) ) {
-			\WP_CLI::log( 'No events recorded yet.' );
+			\WP_CLI::log( __( 'No events recorded yet.', 'wp-conversion-hub' ) );
 			return;
 		}
 		foreach ( $counts as $status => $n ) {
@@ -48,7 +48,7 @@ final class Commands {
 			);
 		}
 		if ( empty( $rows ) ) {
-			\WP_CLI::log( 'No destinations registered.' );
+			\WP_CLI::log( __( 'No destinations registered.', 'wp-conversion-hub' ) );
 			return;
 		}
 		\WP_CLI\Utils\format_items( 'table', $rows, array( 'id', 'label', 'transports', 'enabled', 'configured' ) );
@@ -73,7 +73,13 @@ final class Commands {
 		$value = isset( $assoc['value'] ) ? (float) $assoc['value'] : 9.99;
 
 		if ( ! EventType::is_valid( $type ) ) {
-			\WP_CLI::error( 'Invalid event type: ' . $type );
+			\WP_CLI::error(
+				sprintf(
+					/* translators: %s: the invalid event type the user passed via --type. */
+					__( 'Invalid event type: %s', 'wp-conversion-hub' ),
+					$type
+				)
+			);
 		}
 
 		Plugin::instance()->dispatcher()->dispatch(
@@ -88,7 +94,13 @@ final class Commands {
 			)
 		);
 
-		\WP_CLI::success( 'Dispatched a ' . $type . ' event. Check `wp conversion-hub status`.' );
+		\WP_CLI::success(
+			sprintf(
+				/* translators: %s: the dispatched event type, e.g. "purchase". */
+				__( 'Dispatched a %s event. Check `wp conversion-hub status`.', 'wp-conversion-hub' ),
+				$type
+			)
+		);
 	}
 
 	/**
@@ -104,6 +116,12 @@ final class Commands {
 			\WPConversionHub\Hub\Queue::enqueue( $payload, (string) $row['destination'] );
 			++$n;
 		}
-		\WP_CLI::success( "Re-queued {$n} failed deliveries." );
+		\WP_CLI::success(
+			sprintf(
+				/* translators: %d: number of deliveries re-queued. */
+				__( 'Re-queued %d failed deliveries.', 'wp-conversion-hub' ),
+				$n
+			)
+		);
 	}
 }

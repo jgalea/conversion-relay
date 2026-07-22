@@ -4,6 +4,7 @@ declare( strict_types=1 );
 
 namespace WPConversionHub\Storage;
 
+/** Per-destination delivery ledger backing the custom table: dedup, status, retry count. */
 final class EventLog {
 
 	public const STATUS_PENDING = 'pending';

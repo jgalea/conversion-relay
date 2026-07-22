@@ -35,12 +35,12 @@ final class Plausible extends AbstractDestination {
 	public function settings_fields(): array {
 		return array(
 			'domain'   => array(
-				'label'  => 'Domain (example.com)',
+				'label'  => __( 'Domain (example.com)', 'wp-conversion-hub' ),
 				'type'   => 'text',
 				'secret' => false,
 			),
 			'api_host' => array(
-				'label'   => 'API host',
+				'label'   => __( 'API host', 'wp-conversion-hub' ),
 				'type'    => 'text',
 				'secret'  => false,
 				'default' => 'https://plausible.io',
