@@ -35,9 +35,9 @@ final class PostHog extends AbstractDestination {
 	public function settings_fields(): array {
 		return array(
 			'api_key' => array(
-				'label'  => 'API key',
+				'label'  => 'Project API key',
 				'type'   => 'text',
-				'secret' => true,
+				'secret' => false,
 			),
 			'host'    => array(
 				'label'   => 'Host',

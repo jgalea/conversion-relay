@@ -223,7 +223,7 @@ final class SettingsPage {
 		$settings = array_merge( Settings::defaults(), $settings );
 
 		if ( 'destinations' === $tab && isset( $_POST['dest'] ) && is_array( $_POST['dest'] ) ) {
-			$posted = wp_unslash( $_POST['dest'] ); // phpcs:ignore WordPress.Security.ValidationSanitization
+			$posted = map_deep( wp_unslash( $_POST['dest'] ), 'sanitize_text_field' );
 			foreach ( $this->registry->destinations() as $dest ) {
 				$id                  = $dest->id();
 				$in                  = isset( $posted[ $id ] ) && is_array( $posted[ $id ] ) ? $posted[ $id ] : array();
@@ -241,7 +241,7 @@ final class SettingsPage {
 		}
 
 		if ( 'sources' === $tab && isset( $_POST['src'] ) && is_array( $_POST['src'] ) ) {
-			$posted = wp_unslash( $_POST['src'] ); // phpcs:ignore WordPress.Security.ValidationSanitization
+			$posted = map_deep( wp_unslash( $_POST['src'] ), 'sanitize_text_field' );
 			foreach ( $this->registry->sources() as $source ) {
 				$id                         = $source->id();
 				$in                         = isset( $posted[ $id ] ) && is_array( $posted[ $id ] ) ? $posted[ $id ] : array();
@@ -253,7 +253,7 @@ final class SettingsPage {
 		}
 
 		if ( 'consent' === $tab ) {
-			$consent                          = isset( $_POST['consent'] ) && is_array( $_POST['consent'] ) ? wp_unslash( $_POST['consent'] ) : array();
+			$consent                          = isset( $_POST['consent'] ) && is_array( $_POST['consent'] ) ? map_deep( wp_unslash( $_POST['consent'] ), 'sanitize_text_field' ) : array();
 			$settings['consent']              = array(
 				'require_consent'   => ! empty( $consent['require_consent'] ),
 				'respect_dnt'       => ! empty( $consent['respect_dnt'] ),

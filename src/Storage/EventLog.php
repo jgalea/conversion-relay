@@ -130,7 +130,7 @@ final class EventLog {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$wpdb->query(
 			$wpdb->prepare(
-				"DELETE FROM %i WHERE status IN ('sent','skipped') AND created_at < %s",
+				'DELETE FROM %i WHERE created_at < %s',
 				$table,
 				$cutoff
 			)

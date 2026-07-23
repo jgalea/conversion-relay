@@ -74,7 +74,7 @@ final class ClientQueue {
 	}
 
 	private static function key(): string {
-		return isset( $_COOKIE[ self::COOKIE ] ) ? preg_replace( '/[^A-Za-z0-9]/', '', (string) $_COOKIE[ self::COOKIE ] ) : '';
+		return isset( $_COOKIE[ self::COOKIE ] ) ? preg_replace( '/[^A-Za-z0-9]/', '', sanitize_text_field( wp_unslash( $_COOKIE[ self::COOKIE ] ) ) ) : '';
 	}
 
 	private static function transient( string $key ): string {

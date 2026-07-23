@@ -76,13 +76,19 @@ final class Dispatcher {
 	}
 
 	private function route_server( NormalizedEvent $event, DestinationInterface $destination ): void {
+		// The event log persists for up to 30 days, so keep raw PII and the
+		// visitor's IP/UA out of it. The delivery worker still receives the full
+		// event through the (short-lived) queue payload.
+		$log_payload = $event->to_array();
+		unset( $log_payload['user_data'], $log_payload['identity'] );
+
 		$recorded = EventLog::record_pending(
 			$event->event_id,
 			$destination->id(),
 			$event->type,
 			$event->source,
 			$event->entity_id,
-			$event->to_array()
+			$log_payload
 		);
 
 		if ( $recorded ) {

@@ -85,9 +85,12 @@ final class Matomo extends AbstractDestination {
 			}
 		}
 
-		$response = wp_remote_get(
+		$response = wp_safe_remote_get(
 			add_query_arg( $params, $endpoint ),
-			array( 'timeout' => 5 )
+			array(
+				'timeout'     => 5,
+				'redirection' => 0,
+			)
 		);
 
 		if ( is_wp_error( $response ) ) {

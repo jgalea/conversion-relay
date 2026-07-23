@@ -98,10 +98,29 @@ final class Frontend {
 			return new \WP_REST_Response( array( 'ok' => false ), 403 );
 		}
 
+		if ( ! $this->rest_rate_ok() ) {
+			return new \WP_REST_Response( array( 'ok' => false ), 429 );
+		}
+
 		$type = sanitize_key( (string) $request->get_param( 'type' ) );
-		if ( ! \WPConversionHub\Event\EventType::is_valid( $type ) ) {
+
+		// The public endpoint only accepts genuinely client-origin events. Money
+		// events (purchase, donation, refund, ...) must come from a server-side
+		// source, never an anonymous browser POST, so they cannot be fabricated.
+		$allowed = apply_filters( 'wpch_rest_allowed_types', \WPConversionHub\Event\EventType::client_origin() );
+		if ( ! is_array( $allowed ) || ! in_array( $type, $allowed, true ) ) {
 			return new \WP_REST_Response( array( 'ok' => false ), 400 );
 		}
+
+		$value = $request->get_param( 'value' );
+		$value = is_numeric( $value ) ? (float) $value : null;
+
+		$meta = $request->get_param( 'meta' );
+		$meta = is_array( $meta ) ? $meta : array();
+		if ( count( $meta ) > 20 || strlen( (string) wp_json_encode( $meta ) ) > 2000 ) {
+			$meta = array();
+		}
+		$meta = map_deep( $meta, 'sanitize_text_field' );
 
 		$this->dispatcher->dispatch(
 			\WPConversionHub\Event\NormalizedEvent::create(
@@ -109,13 +128,24 @@ final class Frontend {
 					'type'   => $type,
 					'source' => 'client',
 					'origin' => 'client',
-					'value'  => $request->get_param( 'value' ),
-					'meta'   => (array) $request->get_param( 'meta' ),
+					'value'  => $value,
+					'meta'   => $meta,
 					'url'    => esc_url_raw( (string) $request->get_param( 'url' ) ),
 				)
 			)
 		);
 
 		return new \WP_REST_Response( array( 'ok' => true ), 200 );
+	}
+
+	private function rest_rate_ok(): bool {
+		$ip   = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'anon';
+		$key  = 'wpch_rl_' . md5( $ip );
+		$hits = (int) get_transient( $key );
+		if ( $hits >= 60 ) {
+			return false;
+		}
+		set_transient( $key, $hits + 1, MINUTE_IN_SECONDS );
+		return true;
 	}
 }

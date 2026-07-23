@@ -82,13 +82,14 @@ abstract class AbstractDestination implements DestinationInterface {
 	 * @param array<string,mixed> $body
 	 */
 	protected function post_json( string $url, array $body, array $headers = array() ): DeliveryResult {
-		$response = wp_remote_post(
+		$response = wp_safe_remote_post(
 			$url,
 			array(
-				'timeout'  => 5,
-				'headers'  => array_merge( array( 'Content-Type' => 'application/json' ), $headers ),
-				'body'     => (string) wp_json_encode( $body ),
-				'blocking' => true,
+				'timeout'     => 5,
+				'redirection' => 0,
+				'headers'     => array_merge( array( 'Content-Type' => 'application/json' ), $headers ),
+				'body'        => (string) wp_json_encode( $body ),
+				'blocking'    => true,
 			)
 		);
 

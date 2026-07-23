@@ -38,6 +38,6 @@ final class Consent {
 	}
 
 	private static function dnt_enabled(): bool {
-		return isset( $_SERVER['HTTP_DNT'] ) && '1' === (string) $_SERVER['HTTP_DNT'];
+		return isset( $_SERVER['HTTP_DNT'] ) && '1' === sanitize_text_field( wp_unslash( $_SERVER['HTTP_DNT'] ) );
 	}
 }
