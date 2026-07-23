@@ -8,6 +8,7 @@ use WPConversionHub\Destinations\DestinationInterface;
 use WPConversionHub\Event\NormalizedEvent;
 use WPConversionHub\Storage\EventLog;
 use WPConversionHub\Support\Identity;
+use WPConversionHub\Support\License;
 use WPConversionHub\Support\Registry;
 use WPConversionHub\Support\Settings;
 
@@ -44,6 +45,10 @@ final class Dispatcher {
 
 		foreach ( $this->registry->destinations() as $destination ) {
 			if ( ! Settings::dest_enabled( $destination->id() ) || ! $destination->is_configured() ) {
+				continue;
+			}
+
+			if ( DestinationInterface::TIER_PRO === $destination->tier() && ! License::is_pro() ) {
 				continue;
 			}
 

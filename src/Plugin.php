@@ -65,6 +65,10 @@ final class Plugin {
 			Sources\GravityForms::class,
 			Sources\ContactForm7::class,
 			Sources\ElementorForms::class,
+			Sources\WPForms::class,
+			Sources\FluentForms::class,
+			Sources\NinjaForms::class,
+			Sources\GiveWP::class,
 		);
 		foreach ( $sources as $class ) {
 			if ( class_exists( $class ) ) {
@@ -81,6 +85,10 @@ final class Plugin {
 			Destinations\MetaAds::class,
 			Destinations\GoogleAds::class,
 			Destinations\Vireo::class,
+			Destinations\Matomo::class,
+			Destinations\Webhook::class,
+			Destinations\TikTok::class,
+			Destinations\Pinterest::class,
 		);
 		foreach ( $destinations as $class ) {
 			if ( class_exists( $class ) ) {

@@ -14,9 +14,22 @@ interface DestinationInterface {
 	public const CONSENT_ANALYTICS = 'analytics';
 	public const CONSENT_ADS       = 'advertising';
 
+	public const TIER_FREE = 'free';
+	public const TIER_PRO  = 'pro';
+
 	public function id(): string;
 
 	public function label(): string;
+
+	/**
+	 * TIER_FREE or TIER_PRO. Pro destinations only deliver with a valid license.
+	 */
+	public function tier(): string;
+
+	/**
+	 * Short line shown in the admin when a Pro destination is locked.
+	 */
+	public function pro_note(): string;
 
 	/**
 	 * @return string[] One or both of TRANSPORT_SERVER / TRANSPORT_CLIENT.

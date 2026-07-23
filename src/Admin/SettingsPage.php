@@ -89,9 +89,26 @@ final class SettingsPage {
 	private function render_destinations(): void {
 		echo '<table class="form-table" role="presentation"><tbody>';
 		foreach ( $this->registry->destinations() as $dest ) {
-			$id  = $dest->id();
-			$cfg = Settings::dest_config( $id );
-			echo '<tr><th colspan="2"><h3>' . esc_html( $dest->label() ) . '</h3></th></tr>';
+			$id     = $dest->id();
+			$cfg    = Settings::dest_config( $id );
+			$is_pro = \WPConversionHub\Destinations\DestinationInterface::TIER_PRO === $dest->tier();
+			$locked = $is_pro && ! \WPConversionHub\Support\License::is_pro();
+
+			$heading = esc_html( $dest->label() );
+			if ( $is_pro ) {
+				$heading .= ' <span class="wpch-pro-badge" style="font-size:11px;background:#8a2be2;color:#fff;padding:2px 7px;border-radius:3px;vertical-align:middle;">PRO</span>';
+			}
+			echo '<tr><th colspan="2"><h3>' . wp_kses_post( $heading ) . '</h3></th></tr>';
+
+			if ( $locked ) {
+				printf(
+					'<tr><td colspan="2"><p style="margin:0;color:#555;">%s</p><p style="margin:4px 0 0;"><a href="%s" target="_blank" rel="noopener">Upgrade to unlock</a></p></td></tr>',
+					esc_html( $dest->pro_note() ),
+					esc_url( 'https://github.com/jgalea/wp-conversion-hub' )
+				);
+				continue;
+			}
+
 			printf(
 				'<tr><th scope="row">Enabled</th><td><label><input type="checkbox" name="dest[%s][enabled]" value="1" %s /> Send conversions to %s</label></td></tr>',
 				esc_attr( $id ),
