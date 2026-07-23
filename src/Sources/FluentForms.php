@@ -30,15 +30,15 @@ final class FluentForms extends AbstractSource {
 	}
 
 	/**
-	 * @param mixed $entryId
-	 * @param mixed $formData
+	 * @param mixed $entry_id
+	 * @param mixed $form_data
 	 * @param mixed $form
 	 */
-	public function on_insert( $entryId, $formData, $form ): void {
+	public function on_insert( $entry_id, $form_data, $form ): void {
 		$this->emit(
 			array(
 				'type'      => EventType::FORM_SUBMISSION,
-				'entity_id' => (string) $entryId,
+				'entity_id' => (string) $entry_id,
 				'meta'      => array(
 					'form_id'    => is_object( $form ) && isset( $form->id ) ? $form->id : '',
 					'form_title' => is_object( $form ) && isset( $form->title ) ? $form->title : '',
