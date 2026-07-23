@@ -40,6 +40,11 @@ if ( is_readable( $wpch_autoload ) ) {
 	);
 }
 
+$wpch_action_scheduler = WPCH_DIR . 'vendor/woocommerce/action-scheduler/action-scheduler.php';
+if ( is_readable( $wpch_action_scheduler ) ) {
+	require_once $wpch_action_scheduler;
+}
+
 register_activation_hook( __FILE__, array( Storage\Schema::class, 'install' ) );
 register_deactivation_hook( __FILE__, array( Plugin::class, 'deactivate' ) );
 
