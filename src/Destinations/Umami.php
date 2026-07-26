@@ -84,7 +84,7 @@ final class Umami extends AbstractDestination {
 		);
 
 		$headers = array(
-			'User-Agent' => (string) ( $event->identity['user_agent'] ?? 'WP Conversion Hub' ),
+			'User-Agent' => (string) ( $event->identity['user_agent'] ?? 'Conversion Relay' ),
 		);
 
 		return $this->post_json( $url, $body, $headers );

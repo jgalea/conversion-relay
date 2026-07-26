@@ -1,4 +1,4 @@
-=== WP Conversion Hub ===
+=== Conversion Relay ===
 Contributors: jeangalea
 Tags: conversion tracking, analytics, google analytics, meta pixel, woocommerce
 Requires at least: 6.2
@@ -12,7 +12,7 @@ Send WordPress conversions to the analytics and ad platforms you report on. No t
 
 == Description ==
 
-WP Conversion Hub connects the plugins you already run to the analytics and
+Conversion Relay connects the plugins you already run to the analytics and
 advertising platforms you report on, without a tag manager and without pasting
 snippets into your theme.
 
@@ -72,7 +72,7 @@ plugin website for details.
 1. Upload the plugin to `/wp-content/plugins/` or install it from the Plugins
    screen in WordPress.
 2. Activate it.
-3. Go to Settings → Conversion Hub, connect the destinations you use, and toggle
+3. Go to Settings → Conversion Relay, connect the destinations you use, and toggle
    which sources to track.
 
 == Frequently Asked Questions ==
@@ -88,7 +88,7 @@ completes a sale is never held up waiting on an analytics or ad platform.
 
 = Where do delivery errors show up? =
 
-Settings → Conversion Hub → Status lists recent delivery attempts, including
+Settings → Conversion Relay → Status lists recent delivery attempts, including
 failures and retries. `wp conversion-hub status` shows the same from WP-CLI.
 
 = Can I add a platform that isn't listed? =

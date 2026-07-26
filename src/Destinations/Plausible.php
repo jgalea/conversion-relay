@@ -75,7 +75,7 @@ final class Plausible extends AbstractDestination {
 		}
 
 		$headers = array(
-			'User-Agent'      => (string) ( $event->identity['user_agent'] ?? 'WP Conversion Hub' ),
+			'User-Agent'      => (string) ( $event->identity['user_agent'] ?? 'Conversion Relay' ),
 			'X-Forwarded-For' => (string) ( $event->identity['ip'] ?? '127.0.0.1' ),
 		);
 

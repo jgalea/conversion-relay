@@ -14,7 +14,7 @@ use WPConversionHub\Support\Settings;
  */
 final class SettingsPage {
 
-	private const SLUG = 'wp-conversion-hub';
+	private const SLUG = 'conversion-relay';
 	private const CAP  = 'manage_options';
 
 	private Registry $registry;
@@ -30,8 +30,8 @@ final class SettingsPage {
 
 	public function menu(): void {
 		add_options_page(
-			'WP Conversion Hub',
-			'Conversion Hub',
+			'Conversion Relay',
+			'Conversion Relay',
 			self::CAP,
 			self::SLUG,
 			array( $this, 'render' )
@@ -50,7 +50,7 @@ final class SettingsPage {
 			'status'       => 'Status',
 		);
 
-		echo '<div class="wrap"><h1>WP Conversion Hub</h1>';
+		echo '<div class="wrap"><h1>Conversion Relay</h1>';
 		if ( isset( $_GET['updated'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
 			echo '<div class="notice notice-success is-dismissible"><p>Settings saved.</p></div>';
 		}

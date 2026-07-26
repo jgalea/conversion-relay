@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name:       WP Conversion Hub
+ * Plugin Name:       Conversion Relay
  * Plugin URI:        https://github.com/jgalea/wp-conversion-hub
  * Description:       No-code bridge from WordPress plugin events to analytics and ad platforms. Open alternative to tag-manager conversion tracking.
  * Version:           0.1.0
@@ -8,7 +8,7 @@
  * Requires PHP:      7.4
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       wp-conversion-hub
+ * Text Domain:       conversion-relay
  */
 
 declare( strict_types=1 );

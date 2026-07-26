@@ -5,7 +5,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-SLUG="wp-conversion-hub"
+SLUG="conversion-relay"
 OUT="$(cd .. && pwd)/wpch-build"
 
 rm -rf "$OUT"
