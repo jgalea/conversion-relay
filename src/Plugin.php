@@ -115,6 +115,13 @@ final class Plugin {
 			Destinations\Clarity::class,
 			Destinations\GoogleTagManager::class,
 			Destinations\Hotjar::class,
+			Destinations\SimpleAnalytics::class,
+			Destinations\Pirsch::class,
+			Destinations\Swetrix::class,
+			Destinations\GoSquared::class,
+			Destinations\Usermaven::class,
+			Destinations\Rybbit::class,
+			Destinations\Beam::class,
 		);
 		foreach ( $destinations as $class ) {
 			if ( class_exists( $class ) ) {

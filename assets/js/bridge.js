@@ -179,6 +179,41 @@
 			if ( typeof window.hj === 'function' ) {
 				window.hj( 'event', ev.type );
 			}
+		},
+		simpleanalytics: function ( cfg, ev ) {
+			if ( typeof window.sa_event === 'function' ) {
+				window.sa_event( ev.type );
+			}
+		},
+		pirsch: function ( cfg, ev ) {
+			if ( typeof window.pirsch === 'function' ) {
+				window.pirsch( ev.type );
+			}
+		},
+		swetrix: function ( cfg, ev ) {
+			if ( window.swetrix && typeof window.swetrix.track === 'function' ) {
+				window.swetrix.track( { ev: ev.type } );
+			}
+		},
+		gosquared: function ( cfg, ev ) {
+			if ( typeof window._gs === 'function' ) {
+				window._gs( 'event', ev.type );
+			}
+		},
+		usermaven: function ( cfg, ev ) {
+			if ( typeof window.usermaven === 'function' ) {
+				window.usermaven( 'track', ev.type );
+			}
+		},
+		rybbit: function ( cfg, ev ) {
+			if ( window.rybbit && typeof window.rybbit.event === 'function' ) {
+				window.rybbit.event( ev.type );
+			}
+		},
+		beam: function ( cfg, ev ) {
+			if ( typeof window.beam === 'function' ) {
+				window.beam( '/' + ev.type );
+			}
 		}
 	};
 
