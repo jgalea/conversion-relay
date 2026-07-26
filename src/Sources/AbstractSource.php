@@ -21,6 +21,10 @@ abstract class AbstractSource implements SourceInterface {
 	 */
 	abstract protected function hooks(): void;
 
+	public function client_selectors(): array {
+		return array();
+	}
+
 	/**
 	 * Build a normalized event scoped to this source and dispatch it.
 	 *

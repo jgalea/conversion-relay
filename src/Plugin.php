@@ -90,6 +90,20 @@ final class Plugin {
 			Sources\UltimateMember::class,
 			Sources\SimpleMembership::class,
 			Sources\FluentAffiliate::class,
+			Sources\Groundhogg::class,
+			Sources\DownloadMonitor::class,
+			Sources\Divi::class,
+			Sources\Bricks::class,
+			Sources\BeaverBuilder::class,
+			Sources\Kadence::class,
+			Sources\Oxygen::class,
+			Sources\Breakdance::class,
+			Sources\Forminator::class,
+			Sources\JetFormBuilder::class,
+			Sources\WeForms::class,
+			Sources\KaliForms::class,
+			Sources\HappyForms::class,
+			Sources\SureForms::class,
 		);
 		foreach ( $sources as $class ) {
 			if ( class_exists( $class ) ) {

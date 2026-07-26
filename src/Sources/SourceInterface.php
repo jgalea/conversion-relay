@@ -26,4 +26,13 @@ interface SourceInterface {
 	 * @return string[] EventType constants this source can emit.
 	 */
 	public function supported_events(): array;
+
+	/**
+	 * CSS selectors whose form submissions the client bridge should track. Empty
+	 * for server-side sources; non-empty for client-tracked forms (page builders,
+	 * AJAX form plugins) that have no reliable server hook.
+	 *
+	 * @return string[]
+	 */
+	public function client_selectors(): array;
 }

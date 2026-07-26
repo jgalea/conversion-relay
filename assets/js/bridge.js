@@ -276,4 +276,15 @@
 			} );
 		} );
 	} );
+
+	// Client-side form-submission tracking for page-builder and AJAX form plugins
+	// that have no reliable server hook. Fires form_submission to client
+	// destinations only (server destinations receive server-sourced events).
+	( data.forms || [] ).forEach( function ( selector ) {
+		document.addEventListener( 'submit', function ( e ) {
+			if ( e.target && e.target.closest && e.target.closest( selector ) ) {
+				window.wpch.track( 'form_submission', { server: false } );
+			}
+		}, true );
+	} );
 }() );

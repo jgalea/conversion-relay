@@ -58,9 +58,20 @@ final class Frontend {
 			$configs[ $destination->id() ] = $destination->client_config();
 		}
 
+		$forms = array();
+		foreach ( $this->registry->sources() as $source ) {
+			if ( ! Settings::source_enabled( $source->id() ) || ! $source->is_available() ) {
+				continue;
+			}
+			foreach ( $source->client_selectors() as $selector ) {
+				$forms[] = $selector;
+			}
+		}
+		$forms = array_values( array_unique( $forms ) );
+
 		$events = ClientQueue::flush();
 
-		if ( empty( $configs ) && empty( $events ) ) {
+		if ( empty( $configs ) && empty( $events ) && empty( $forms ) ) {
 			return;
 		}
 
@@ -69,6 +80,7 @@ final class Frontend {
 			'nonce'        => wp_create_nonce( 'wp_rest' ),
 			'destinations' => $configs,
 			'events'       => array_values( $events ),
+			'forms'        => $forms,
 		);
 
 		wp_print_inline_script_tag(
