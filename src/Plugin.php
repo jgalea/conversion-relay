@@ -74,6 +74,13 @@ final class Plugin {
 			Sources\WPSimplePay::class,
 			Sources\MemberPress::class,
 			Sources\Formidable::class,
+			Sources\AffiliateWP::class,
+			Sources\TutorLMS::class,
+			Sources\RestrictContentPro::class,
+			Sources\WSForm::class,
+			Sources\FluentCRM::class,
+			Sources\SolidAffiliate::class,
+			Sources\Charitable::class,
 		);
 		foreach ( $sources as $class ) {
 			if ( class_exists( $class ) ) {
