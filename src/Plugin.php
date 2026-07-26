@@ -104,6 +104,10 @@ final class Plugin {
 			Sources\KaliForms::class,
 			Sources\HappyForms::class,
 			Sources\SureForms::class,
+			Sources\MailPoet::class,
+			Sources\MC4WP::class,
+			Sources\TheNewsletterPlugin::class,
+			Sources\Mailster::class,
 		);
 		foreach ( $sources as $class ) {
 			if ( class_exists( $class ) ) {
@@ -136,6 +140,12 @@ final class Plugin {
 			Destinations\Usermaven::class,
 			Destinations\Rybbit::class,
 			Destinations\Beam::class,
+			Destinations\TinyAnalytics::class,
+			Destinations\UserBird::class,
+			Destinations\WideAngle::class,
+			Destinations\KokoAnalytics::class,
+			Destinations\MicrosoftAds::class,
+			Destinations\XAds::class,
 		);
 		foreach ( $destinations as $class ) {
 			if ( class_exists( $class ) ) {

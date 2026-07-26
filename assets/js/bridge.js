@@ -214,6 +214,67 @@
 			if ( typeof window.beam === 'function' ) {
 				window.beam( '/' + ev.type );
 			}
+		},
+		tinyanalytics: function ( cfg, ev ) {
+			if ( window.tinyanalytics && typeof window.tinyanalytics.goal === 'function' ) {
+				window.tinyanalytics.goal( ev.type );
+			}
+		},
+		userbird: function ( cfg, ev ) {
+			if ( window.userbirdq && typeof window.userbirdq.push === 'function' ) {
+				window.userbirdq.push( [ 'event', ev.type ] );
+			}
+		},
+		wideangle: function ( cfg, ev ) {
+			if ( window.waa && typeof window.waa.dispatchEvent === 'function' ) {
+				window.waa.dispatchEvent( ev.type );
+			}
+		},
+		kokoanalytics: function ( cfg, ev ) {
+			if ( window.koko_analytics && typeof window.koko_analytics.trackEvent === 'function' ) {
+				window.koko_analytics.trackEvent( ev.type );
+			}
+		},
+		microsoft: function ( cfg, ev ) {
+			if ( ! cfg.tag_id ) {
+				return;
+			}
+			if ( ! loaded[ 'uet-' + cfg.tag_id ] ) {
+				loaded[ 'uet-' + cfg.tag_id ] = true;
+				window.uetq = window.uetq || [];
+				loadScript( 'https://bat.bing.com/bat.js', function () {
+					if ( window.UET ) {
+						window.uetq = new window.UET( { ti: cfg.tag_id, q: window.uetq } );
+						window.uetq.push( 'pageLoad' );
+					}
+				} );
+			}
+			var params = {};
+			if ( ev.value != null ) params.revenue_value = ev.value;
+			if ( ev.currency ) params.currency = ev.currency;
+			window.uetq = window.uetq || [];
+			window.uetq.push( 'event', ev.type, params );
+		},
+		x: function ( cfg, ev ) {
+			if ( ! cfg.pixel_id ) {
+				return;
+			}
+			if ( ! window.twq ) {
+				var s = ( window.twq = function () {
+					s.exe ? s.exe.apply( s, arguments ) : s.queue.push( arguments );
+				} );
+				s.version = '1.1';
+				s.queue = [];
+				loadScript( 'https://static.ads-twitter.com/uwt.js' );
+			}
+			if ( ! loaded[ 'twq-' + cfg.pixel_id ] ) {
+				loaded[ 'twq-' + cfg.pixel_id ] = true;
+				window.twq( 'config', cfg.pixel_id );
+			}
+			var params = {};
+			if ( ev.value != null ) params.value = ev.value;
+			if ( ev.currency ) params.currency = ev.currency;
+			window.twq( 'event', 'tw-' + cfg.pixel_id + '-' + ev.type, params );
 		}
 	};
 
