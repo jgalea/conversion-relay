@@ -32,8 +32,8 @@ final class SettingsPage {
 
 	public function menu(): void {
 		add_options_page(
-			'Conversion Relay',
-			'Conversion Relay',
+			__( 'Conversion Relay', 'conversion-relay' ),
+			__( 'Conversion Relay', 'conversion-relay' ),
 			self::CAP,
 			self::SLUG,
 			array( $this, 'render' )

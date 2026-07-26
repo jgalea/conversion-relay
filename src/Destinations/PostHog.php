@@ -62,7 +62,7 @@ final class PostHog extends AbstractDestination {
 	public function send_server( NormalizedEvent $event ): DeliveryResult {
 		$api_key = $this->get( 'api_key' );
 		if ( '' === $api_key ) {
-			return DeliveryResult::failure( 'No PostHog API key configured.' );
+			return DeliveryResult::failure( __( 'No PostHog API key configured.', 'conversion-relay' ) );
 		}
 
 		$host = rtrim( $this->get( 'host', 'https://us.i.posthog.com' ), '/' );
