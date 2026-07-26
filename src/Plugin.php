@@ -69,6 +69,11 @@ final class Plugin {
 			Sources\FluentForms::class,
 			Sources\NinjaForms::class,
 			Sources\GiveWP::class,
+			Sources\LifterLMS::class,
+			Sources\LearnDash::class,
+			Sources\WPSimplePay::class,
+			Sources\MemberPress::class,
+			Sources\Formidable::class,
 		);
 		foreach ( $sources as $class ) {
 			if ( class_exists( $class ) ) {
@@ -89,6 +94,8 @@ final class Plugin {
 			Destinations\Webhook::class,
 			Destinations\TikTok::class,
 			Destinations\Pinterest::class,
+			Destinations\LinkedInAds::class,
+			Destinations\RedditAds::class,
 		);
 		foreach ( $destinations as $class ) {
 			if ( class_exists( $class ) ) {

@@ -22,15 +22,49 @@ final class Edd extends AbstractSource {
 	}
 
 	public function supported_events(): array {
-		return array( EventType::PURCHASE, EventType::BEGIN_CHECKOUT );
+		return array( EventType::PURCHASE, EventType::BEGIN_CHECKOUT, EventType::REFUND );
 	}
 
 	protected function hooks(): void {
 		add_action( 'edd_complete_purchase', array( $this, 'on_complete' ) );
+		// Catches recurring renewals, which reach a paid status without firing
+		// edd_complete_purchase. The deterministic event_id dedupes any overlap
+		// with the initial purchase above.
+		add_action( 'edd_update_payment_status', array( $this, 'on_status' ), 10, 3 );
 		add_action( 'template_redirect', array( $this, 'maybe_begin_checkout' ) );
+		add_action( 'edd_refund_order', array( $this, 'on_refund' ), 10, 2 );
 	}
 
 	public function on_complete( int $payment_id ): void {
+		$this->emit_purchase( $payment_id );
+	}
+
+	/**
+	 * @param int    $payment_id
+	 * @param string $new_status
+	 * @param string $old_status
+	 */
+	public function on_status( int $payment_id, string $new_status = '', string $old_status = '' ): void {
+		if ( ! in_array( $new_status, array( 'complete', 'publish', 'edd_subscription' ), true ) ) {
+			return;
+		}
+		$this->emit_purchase( $payment_id );
+	}
+
+	public function on_refund( int $order_id, int $refund_id = 0 ): void {
+		$amount = function_exists( 'edd_get_payment_amount' ) ? (float) edd_get_payment_amount( $order_id ) : null;
+		$this->emit(
+			array(
+				'type'      => EventType::REFUND,
+				'entity_id' => (string) $order_id . '-r',
+				'value'     => $amount,
+				'currency'  => function_exists( 'edd_get_payment_currency_code' ) ? edd_get_payment_currency_code( $order_id ) : null,
+				'meta'      => array( 'refund_id' => $refund_id ),
+			)
+		);
+	}
+
+	private function emit_purchase( int $payment_id ): void {
 		$this->emit(
 			array(
 				'type'      => EventType::PURCHASE,
