@@ -28,7 +28,7 @@ final class GoogleAds extends AbstractDestination {
 	}
 
 	public function pro_note(): string {
-		return 'Google Ads conversion tracking with enhanced conversions.';
+		return __( 'Google Ads conversion tracking with enhanced conversions.', 'conversion-relay' );
 	}
 
 	public function capabilities(): array {
@@ -44,12 +44,12 @@ final class GoogleAds extends AbstractDestination {
 	public function settings_fields(): array {
 		return array(
 			'conversion_id'    => array(
-				'label'  => 'Conversion ID (AW-XXXXXXXXX)',
+				'label'  => __( 'Conversion ID (AW-XXXXXXXXX)', 'conversion-relay' ),
 				'type'   => 'text',
 				'secret' => false,
 			),
 			'conversion_label' => array(
-				'label'  => 'Conversion label',
+				'label'  => __( 'Conversion label', 'conversion-relay' ),
 				'type'   => 'text',
 				'secret' => false,
 			),

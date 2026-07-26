@@ -35,7 +35,7 @@ final class MetaAds extends AbstractDestination {
 	}
 
 	public function pro_note(): string {
-		return 'Pixel plus server-side Conversions API, with ad-blocker-proof attribution.';
+		return __( 'Pixel plus server-side Conversions API, with ad-blocker-proof attribution.', 'conversion-relay' );
 	}
 
 	public function capabilities(): array {
@@ -53,17 +53,17 @@ final class MetaAds extends AbstractDestination {
 	public function settings_fields(): array {
 		return array(
 			'pixel_id'        => array(
-				'label'  => 'Pixel ID',
+				'label'  => __( 'Pixel ID', 'conversion-relay' ),
 				'type'   => 'text',
 				'secret' => false,
 			),
 			'access_token'    => array(
-				'label'  => 'Access token',
+				'label'  => __( 'Access token', 'conversion-relay' ),
 				'type'   => 'text',
 				'secret' => true,
 			),
 			'test_event_code' => array(
-				'label'  => 'Test event code',
+				'label'  => __( 'Test event code', 'conversion-relay' ),
 				'type'   => 'text',
 				'secret' => false,
 			),

@@ -31,7 +31,7 @@ final class TikTok extends AbstractDestination {
 	}
 
 	public function pro_note(): string {
-		return 'Server-side Events API delivery to TikTok.';
+		return __( 'Server-side Events API delivery to TikTok.', 'conversion-relay' );
 	}
 
 	public function capabilities(): array {
@@ -48,17 +48,17 @@ final class TikTok extends AbstractDestination {
 	public function settings_fields(): array {
 		return array(
 			'pixel_code'      => array(
-				'label'  => 'Pixel code',
+				'label'  => __( 'Pixel code', 'conversion-relay' ),
 				'type'   => 'text',
 				'secret' => false,
 			),
 			'access_token'    => array(
-				'label'  => 'Access token',
+				'label'  => __( 'Access token', 'conversion-relay' ),
 				'type'   => 'text',
 				'secret' => true,
 			),
 			'test_event_code' => array(
-				'label'  => 'Test event code',
+				'label'  => __( 'Test event code', 'conversion-relay' ),
 				'type'   => 'text',
 				'secret' => false,
 			),

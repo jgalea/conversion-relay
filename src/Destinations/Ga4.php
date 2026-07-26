@@ -46,12 +46,12 @@ final class Ga4 extends AbstractDestination {
 	public function settings_fields(): array {
 		return array(
 			'measurement_id' => array(
-				'label'  => 'Measurement ID (G-XXXXXXX)',
+				'label'  => __( 'Measurement ID (G-XXXXXXX)', 'conversion-relay' ),
 				'type'   => 'text',
 				'secret' => false,
 			),
 			'api_secret'     => array(
-				'label'  => 'Measurement Protocol API secret',
+				'label'  => __( 'Measurement Protocol API secret', 'conversion-relay' ),
 				'type'   => 'text',
 				'secret' => true,
 			),

@@ -4,7 +4,9 @@ declare( strict_types=1 );
 
 namespace WPConversionHub\Admin;
 
+use WPConversionHub\Destinations\DestinationInterface;
 use WPConversionHub\Storage\EventLog;
+use WPConversionHub\Support\License;
 use WPConversionHub\Support\Registry;
 use WPConversionHub\Support\Settings;
 
@@ -44,15 +46,15 @@ final class SettingsPage {
 		}
 		$tab  = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'destinations'; // phpcs:ignore WordPress.Security.NonceVerification
 		$tabs = array(
-			'destinations' => 'Destinations',
-			'sources'      => 'Sources',
-			'consent'      => 'Consent',
-			'status'       => 'Status',
+			'destinations' => __( 'Destinations', 'conversion-relay' ),
+			'sources'      => __( 'Sources', 'conversion-relay' ),
+			'consent'      => __( 'Consent', 'conversion-relay' ),
+			'status'       => __( 'Status', 'conversion-relay' ),
 		);
 
 		echo '<div class="wrap"><h1>Conversion Relay</h1>';
 		if ( isset( $_GET['updated'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
-			echo '<div class="notice notice-success is-dismissible"><p>Settings saved.</p></div>';
+			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Settings saved.', 'conversion-relay' ) . '</p></div>';
 		}
 
 		echo '<h2 class="nav-tab-wrapper">';
@@ -91,35 +93,38 @@ final class SettingsPage {
 		foreach ( $this->registry->destinations() as $dest ) {
 			$id     = $dest->id();
 			$cfg    = Settings::dest_config( $id );
-			$is_pro = \WPConversionHub\Destinations\DestinationInterface::TIER_PRO === $dest->tier();
-			$locked = $is_pro && ! \WPConversionHub\Support\License::is_pro();
+			$is_pro = DestinationInterface::TIER_PRO === $dest->tier();
+			$locked = $is_pro && ! License::is_pro();
 
 			$heading = esc_html( $dest->label() );
 			if ( $is_pro ) {
-				$heading .= ' <span class="wpch-pro-badge" style="font-size:11px;background:#8a2be2;color:#fff;padding:2px 7px;border-radius:3px;vertical-align:middle;">PRO</span>';
+				$heading .= ' <span class="wpch-pro-badge" style="font-size:11px;background:#0e8f82;color:#fff;padding:2px 7px;border-radius:3px;vertical-align:middle;">' . esc_html__( 'PRO', 'conversion-relay' ) . '</span>';
 			}
 			echo '<tr><th colspan="2"><h3>' . wp_kses_post( $heading ) . '</h3></th></tr>';
 
 			if ( $locked ) {
 				printf(
-					'<tr><td colspan="2"><p style="margin:0;color:#555;">%s</p><p style="margin:4px 0 0;"><a href="%s" target="_blank" rel="noopener">Upgrade to unlock</a></p></td></tr>',
+					'<tr><td colspan="2"><p style="margin:0;color:#555;">%s</p><p style="margin:4px 0 0;"><a href="%s" target="_blank" rel="noopener">%s</a></p></td></tr>',
 					esc_html( $dest->pro_note() ),
-					esc_url( 'https://github.com/jgalea/wp-conversion-hub' )
+					esc_url( 'https://github.com/jgalea/conversion-relay' ),
+					esc_html__( 'Upgrade to unlock', 'conversion-relay' )
 				);
 				continue;
 			}
 
 			printf(
-				'<tr><th scope="row">Enabled</th><td><label><input type="checkbox" name="dest[%s][enabled]" value="1" %s /> Send conversions to %s</label></td></tr>',
+				/* translators: %s: destination name. */
+				'<tr><th scope="row">%s</th><td><label><input type="checkbox" name="dest[%s][enabled]" value="1" %s /> %s</label></td></tr>',
+				esc_html__( 'Enabled', 'conversion-relay' ),
 				esc_attr( $id ),
 				checked( ! empty( $cfg['enabled'] ), true, false ),
-				esc_html( $dest->label() )
+				esc_html( sprintf( /* translators: %s: destination name. */ __( 'Send conversions to %s', 'conversion-relay' ), $dest->label() ) )
 			);
 			foreach ( $dest->settings_fields() as $key => $field ) {
 				$is_secret = ! empty( $field['secret'] );
 				$value     = (string) ( $cfg[ $key ] ?? '' );
 				$display   = $is_secret && '' !== $value ? '' : $value;
-				$ph        = $is_secret && '' !== $value ? '••••••••  (saved — leave blank to keep)' : '';
+				$ph        = $is_secret && '' !== $value ? esc_html__( 'saved — leave blank to keep', 'conversion-relay' ) : '';
 				printf(
 					'<tr><th scope="row">%s</th><td><input type="text" class="regular-text" name="dest[%s][%s]" value="%s" placeholder="%s" autocomplete="off" /></td></tr>',
 					esc_html( (string) $field['label'] ),
@@ -134,25 +139,27 @@ final class SettingsPage {
 	}
 
 	private function render_sources(): void {
+		$channels = array(
+			'both'        => __( 'Server + client', 'conversion-relay' ),
+			'server_only' => __( 'Server only', 'conversion-relay' ),
+			'client_only' => __( 'Client only', 'conversion-relay' ),
+		);
 		echo '<table class="form-table" role="presentation"><tbody>';
 		foreach ( $this->registry->sources() as $source ) {
 			$id      = $source->id();
 			$all     = Settings::all();
 			$scfg    = $all['sources'][ $id ] ?? array();
 			$channel = Settings::source_channel( $id );
-			$avail   = $source->is_available() ? '' : ' <em>(plugin not active)</em>';
+			$avail   = $source->is_available() ? '' : ' <em>' . esc_html__( '(plugin not active)', 'conversion-relay' ) . '</em>';
 			echo '<tr><th scope="row">' . esc_html( $source->label() ) . wp_kses_post( $avail ) . '</th><td>';
 			printf(
-				'<label><input type="checkbox" name="src[%s][enabled]" value="1" %s /> Track</label> &nbsp; ',
+				'<label><input type="checkbox" name="src[%s][enabled]" value="1" %s /> %s</label> &nbsp; ',
 				esc_attr( $id ),
-				checked( ! empty( $scfg['enabled'] ), true, false )
+				checked( ! empty( $scfg['enabled'] ), true, false ),
+				esc_html__( 'Track', 'conversion-relay' )
 			);
-			echo 'Channel: <select name="src[' . esc_attr( $id ) . '][channel]">';
-			foreach ( array(
-				'both'        => 'Server + client',
-				'server_only' => 'Server only',
-				'client_only' => 'Client only',
-			) as $val => $label ) {
+			echo esc_html__( 'Channel:', 'conversion-relay' ) . ' <select name="src[' . esc_attr( $id ) . '][channel]">';
+			foreach ( $channels as $val => $label ) {
 				printf( '<option value="%s" %s>%s</option>', esc_attr( $val ), selected( $channel, $val, false ), esc_html( $label ) );
 			}
 			echo '</select></td></tr>';
@@ -164,39 +171,59 @@ final class SettingsPage {
 		$c = Settings::consent();
 		echo '<table class="form-table" role="presentation"><tbody>';
 		printf(
-			'<tr><th scope="row">Require consent</th><td><label><input type="checkbox" name="consent[require_consent]" value="1" %s /> Gate destinations on consent</label></td></tr>',
-			checked( ! empty( $c['require_consent'] ), true, false )
+			'<tr><th scope="row">%s</th><td><label><input type="checkbox" name="consent[require_consent]" value="1" %s /> %s</label></td></tr>',
+			esc_html__( 'Require consent', 'conversion-relay' ),
+			checked( ! empty( $c['require_consent'] ), true, false ),
+			esc_html__( 'Gate destinations on consent', 'conversion-relay' )
 		);
 		printf(
-			'<tr><th scope="row">Respect DNT</th><td><label><input type="checkbox" name="consent[respect_dnt]" value="1" %s /> Honor the browser Do Not Track header</label></td></tr>',
-			checked( ! empty( $c['respect_dnt'] ), true, false )
+			'<tr><th scope="row">%s</th><td><label><input type="checkbox" name="consent[respect_dnt]" value="1" %s /> %s</label></td></tr>',
+			esc_html__( 'Respect DNT', 'conversion-relay' ),
+			checked( ! empty( $c['respect_dnt'] ), true, false ),
+			esc_html__( 'Honor the browser Do Not Track header', 'conversion-relay' )
 		);
-		foreach ( array(
-			'analytics_default' => 'Analytics default',
-			'ads_default'       => 'Advertising default',
-		) as $key => $label ) {
+		$defaults = array(
+			'analytics_default' => __( 'Analytics default', 'conversion-relay' ),
+			'ads_default'       => __( 'Advertising default', 'conversion-relay' ),
+		);
+		$choices  = array(
+			'granted' => __( 'Granted', 'conversion-relay' ),
+			'denied'  => __( 'Denied', 'conversion-relay' ),
+		);
+		foreach ( $defaults as $key => $label ) {
 			echo '<tr><th scope="row">' . esc_html( $label ) . '</th><td><select name="consent[' . esc_attr( $key ) . ']">';
-			foreach ( array(
-				'granted' => 'Granted',
-				'denied'  => 'Denied',
-			) as $val => $vlabel ) {
+			foreach ( $choices as $val => $vlabel ) {
 				printf( '<option value="%s" %s>%s</option>', esc_attr( $val ), selected( (string) ( $c[ $key ] ?? '' ), $val, false ), esc_html( $vlabel ) );
 			}
 			echo '</select></td></tr>';
 		}
 		printf(
-			'<tr><th scope="row">Enhanced conversions</th><td><label><input type="checkbox" name="enhanced_conversions" value="1" %s /> Hash and send first-party customer data (opt-in)</label></td></tr>',
-			checked( Settings::enhanced_conversions_enabled(), true, false )
+			'<tr><th scope="row">%s</th><td><label><input type="checkbox" name="enhanced_conversions" value="1" %s /> %s</label></td></tr>',
+			esc_html__( 'Enhanced conversions', 'conversion-relay' ),
+			checked( Settings::enhanced_conversions_enabled(), true, false ),
+			esc_html__( 'Hash and send first-party customer data (opt-in)', 'conversion-relay' )
 		);
 		echo '</tbody></table>';
 	}
 
 	private function render_status(): void {
-		echo '<p>Most recent delivery attempts.</p>';
-		echo '<table class="widefat striped"><thead><tr><th>Time</th><th>Type</th><th>Source</th><th>Destination</th><th>Status</th><th>Attempts</th><th>Response</th></tr></thead><tbody>';
+		echo '<p>' . esc_html__( 'Most recent delivery attempts.', 'conversion-relay' ) . '</p>';
+		echo '<table class="widefat striped"><thead><tr>';
+		foreach ( array(
+			__( 'Time', 'conversion-relay' ),
+			__( 'Type', 'conversion-relay' ),
+			__( 'Source', 'conversion-relay' ),
+			__( 'Destination', 'conversion-relay' ),
+			__( 'Status', 'conversion-relay' ),
+			__( 'Attempts', 'conversion-relay' ),
+			__( 'Response', 'conversion-relay' ),
+		) as $header ) {
+			echo '<th>' . esc_html( $header ) . '</th>';
+		}
+		echo '</tr></thead><tbody>';
 		$rows = EventLog::recent( 50 );
 		if ( empty( $rows ) ) {
-			echo '<tr><td colspan="7">No events yet.</td></tr>';
+			echo '<tr><td colspan="7">' . esc_html__( 'No events yet.', 'conversion-relay' ) . '</td></tr>';
 		}
 		foreach ( $rows as $row ) {
 			printf(
@@ -215,7 +242,7 @@ final class SettingsPage {
 
 	public function save(): void {
 		if ( ! current_user_can( self::CAP ) || ! check_admin_referer( 'wpch_save' ) ) {
-			wp_die( 'Unauthorized', '', array( 'response' => 403 ) );
+			wp_die( esc_html__( 'Unauthorized', 'conversion-relay' ), '', array( 'response' => 403 ) );
 		}
 
 		$tab      = isset( $_POST['tab'] ) ? sanitize_key( wp_unslash( $_POST['tab'] ) ) : '';

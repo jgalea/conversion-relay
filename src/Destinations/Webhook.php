@@ -34,7 +34,7 @@ final class Webhook extends AbstractDestination {
 	public function settings_fields(): array {
 		return array(
 			'url' => array(
-				'label'   => 'Webhook URL',
+				'label'   => __( 'Webhook URL', 'conversion-relay' ),
 				'type'    => 'text',
 				'secret'  => false,
 				'default' => 'https://example.com/hook',

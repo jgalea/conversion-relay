@@ -83,10 +83,21 @@ final class Frontend {
 			'/event',
 			array(
 				'methods'             => 'POST',
-				'permission_callback' => '__return_true',
+				'permission_callback' => array( $this, 'rest_permission' ),
 				'callback'            => array( $this, 'rest_event' ),
 			)
 		);
+	}
+
+	/**
+	 * The public endpoint is CSRF-guarded by the front-end REST nonce. This is not
+	 * authentication (see rest_event for the real abuse controls); it only proves
+	 * the request came from a page this site rendered.
+	 *
+	 * @param \WP_REST_Request $request
+	 */
+	public function rest_permission( $request ): bool {
+		return false !== wp_verify_nonce( (string) $request->get_header( 'X-WP-Nonce' ), 'wp_rest' );
 	}
 
 	/**
@@ -94,10 +105,6 @@ final class Frontend {
 	 * @return \WP_REST_Response
 	 */
 	public function rest_event( $request ) {
-		if ( ! wp_verify_nonce( (string) $request->get_header( 'X-WP-Nonce' ), 'wp_rest' ) ) {
-			return new \WP_REST_Response( array( 'ok' => false ), 403 );
-		}
-
 		if ( ! $this->rest_rate_ok() ) {
 			return new \WP_REST_Response( array( 'ok' => false ), 429 );
 		}

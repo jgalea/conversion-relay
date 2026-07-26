@@ -1,6 +1,6 @@
 <div align="center">
 
-![WP Conversion Hub](.github/header.png)
+![Conversion Relay](.github/header.png)
 
 [![License](https://img.shields.io/badge/LICENSE-GPL--2.0-5C9E31?style=for-the-badge)](LICENSE)
 [![WordPress](https://img.shields.io/badge/WORDPRESS-6.2%2B-21759B?style=for-the-badge&logo=wordpress&logoColor=white)](https://wordpress.org)
@@ -12,7 +12,7 @@
 
 ## What it does
 
-WP Conversion Hub turns actions in the plugins you already run — a WooCommerce
+Conversion Relay turns actions in the plugins you already run — a WooCommerce
 purchase, a Gravity Forms submission, an EDD sale — into one normalized event, then
 routes that event to every analytics and advertising platform you enable. No Google
 Tag Manager, no snippets pasted into `functions.php`.

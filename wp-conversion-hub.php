@@ -1,7 +1,9 @@
 <?php
 /**
  * Plugin Name:       Conversion Relay
- * Plugin URI:        https://github.com/jgalea/wp-conversion-hub
+ * Plugin URI:        https://github.com/jgalea/conversion-relay
+ * Author:            Jean Galea
+ * Author URI:        https://github.com/jgalea
  * Description:       No-code bridge from WordPress plugin events to analytics and ad platforms. Open alternative to tag-manager conversion tracking.
  * Version:           0.1.0
  * Requires at least: 6.2

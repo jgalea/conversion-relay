@@ -35,12 +35,12 @@ final class PostHog extends AbstractDestination {
 	public function settings_fields(): array {
 		return array(
 			'api_key' => array(
-				'label'  => 'Project API key',
+				'label'  => __( 'Project API key', 'conversion-relay' ),
 				'type'   => 'text',
 				'secret' => false,
 			),
 			'host'    => array(
-				'label'   => 'Host',
+				'label'   => __( 'Host', 'conversion-relay' ),
 				'type'    => 'text',
 				'default' => 'https://us.i.posthog.com',
 				'secret'  => false,

@@ -31,18 +31,18 @@ final class Matomo extends AbstractDestination {
 	public function settings_fields(): array {
 		return array(
 			'url'        => array(
-				'label'   => 'Matomo URL',
+				'label'   => __( 'Matomo URL', 'conversion-relay' ),
 				'type'    => 'text',
 				'secret'  => false,
 				'default' => 'https://analytics.example.com/',
 			),
 			'site_id'    => array(
-				'label'  => 'Site ID',
+				'label'  => __( 'Site ID', 'conversion-relay' ),
 				'type'   => 'text',
 				'secret' => false,
 			),
 			'token_auth' => array(
-				'label'  => 'Auth token',
+				'label'  => __( 'Auth token', 'conversion-relay' ),
 				'type'   => 'text',
 				'secret' => true,
 			),

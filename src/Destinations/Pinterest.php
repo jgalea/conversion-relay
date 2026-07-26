@@ -31,7 +31,7 @@ final class Pinterest extends AbstractDestination {
 	}
 
 	public function pro_note(): string {
-		return 'Server-side Conversions API delivery to Pinterest.';
+		return __( 'Server-side Conversions API delivery to Pinterest.', 'conversion-relay' );
 	}
 
 	public function capabilities(): array {
@@ -48,12 +48,12 @@ final class Pinterest extends AbstractDestination {
 	public function settings_fields(): array {
 		return array(
 			'ad_account_id' => array(
-				'label'  => 'Ad account ID',
+				'label'  => __( 'Ad account ID', 'conversion-relay' ),
 				'type'   => 'text',
 				'secret' => false,
 			),
 			'access_token'  => array(
-				'label'  => 'Access token',
+				'label'  => __( 'Access token', 'conversion-relay' ),
 				'type'   => 'text',
 				'secret' => true,
 			),
