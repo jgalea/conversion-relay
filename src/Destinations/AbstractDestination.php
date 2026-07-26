@@ -39,7 +39,7 @@ abstract class AbstractDestination implements DestinationInterface {
 	}
 
 	public function send_server( NormalizedEvent $event ): DeliveryResult {
-		return DeliveryResult::failure( 'Server transport not implemented.' );
+		return DeliveryResult::failure( __( 'Server transport not implemented.', 'conversion-relay' ) );
 	}
 
 	protected function get( string $key, string $default = '' ): string {
@@ -102,6 +102,14 @@ abstract class AbstractDestination implements DestinationInterface {
 			return DeliveryResult::success( (string) wp_remote_retrieve_body( $response ), $code );
 		}
 
-		return DeliveryResult::failure( 'HTTP ' . $code . ': ' . wp_remote_retrieve_body( $response ), $code );
+		return DeliveryResult::failure(
+			sprintf(
+				/* translators: 1: HTTP status code, 2: response body from the destination. */
+				__( 'HTTP %1$d: %2$s', 'conversion-relay' ),
+				$code,
+				wp_remote_retrieve_body( $response )
+			),
+			$code
+		);
 	}
 }
