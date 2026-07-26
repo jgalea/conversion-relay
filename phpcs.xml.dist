@@ -3,7 +3,7 @@
 	<description>Coding standards for WP Conversion Hub: WordPress security and best practices, without the docblock-on-everything rules.</description>
 
 	<file>src</file>
-	<file>wp-conversion-hub.php</file>
+	<file>conversion-relay.php</file>
 	<file>uninstall.php</file>
 
 	<arg name="extensions" value="php"/>
