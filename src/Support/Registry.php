@@ -7,6 +7,7 @@ namespace WPConversionHub\Support;
 use WPConversionHub\Destinations\DestinationInterface;
 use WPConversionHub\Sources\SourceInterface;
 
+/** In-memory catalogue of registered sources and destinations, keyed by id. */
 final class Registry {
 
 	/** @var array<string,SourceInterface> */
