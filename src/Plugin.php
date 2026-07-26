@@ -81,6 +81,15 @@ final class Plugin {
 			Sources\FluentCRM::class,
 			Sources\SolidAffiliate::class,
 			Sources\Charitable::class,
+			Sources\EverestForms::class,
+			Sources\SliceWP::class,
+			Sources\LatePoint::class,
+			Sources\FluentBooking::class,
+			Sources\PaidMembershipsPro::class,
+			Sources\FunnelKitAutomations::class,
+			Sources\UltimateMember::class,
+			Sources\SimpleMembership::class,
+			Sources\FluentAffiliate::class,
 		);
 		foreach ( $sources as $class ) {
 			if ( class_exists( $class ) ) {
@@ -103,6 +112,9 @@ final class Plugin {
 			Destinations\Pinterest::class,
 			Destinations\LinkedInAds::class,
 			Destinations\RedditAds::class,
+			Destinations\Clarity::class,
+			Destinations\GoogleTagManager::class,
+			Destinations\Hotjar::class,
 		);
 		foreach ( $destinations as $class ) {
 			if ( class_exists( $class ) ) {

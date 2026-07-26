@@ -142,6 +142,43 @@
 			if ( window.posthog && typeof window.posthog.capture === 'function' ) {
 				window.posthog.capture( ev.type, { value: ev.value, currency: ev.currency, event_id: ev.event_id } );
 			}
+		},
+		clarity: function ( cfg, ev ) {
+			if ( cfg.project_id && ! loaded[ 'clarity-' + cfg.project_id ] ) {
+				loaded[ 'clarity-' + cfg.project_id ] = true;
+				( function ( c, l, a, r, i ) {
+					c[ a ] = c[ a ] || function () { ( c[ a ].q = c[ a ].q || [] ).push( arguments ); };
+					var t = l.createElement( 'script' ); t.async = 1; t.src = 'https://www.clarity.ms/tag/' + i;
+					var y = l.getElementsByTagName( 'script' )[ 0 ]; y.parentNode.insertBefore( t, y );
+				}( window, document, 'clarity', 'script', cfg.project_id ) );
+			}
+			if ( typeof window.clarity === 'function' ) {
+				window.clarity( 'event', ev.type );
+			}
+		},
+		gtm: function ( cfg, ev ) {
+			window.dataLayer = window.dataLayer || [];
+			if ( cfg.container_id && ! loaded[ 'gtm-' + cfg.container_id ] ) {
+				loaded[ 'gtm-' + cfg.container_id ] = true;
+				window.dataLayer.push( { 'gtm.start': new Date().getTime(), event: 'gtm.js' } );
+				loadScript( 'https://www.googletagmanager.com/gtm.js?id=' + encodeURIComponent( cfg.container_id ) );
+			}
+			var payload = { event: 'wpch_' + ev.type, wpch_event_id: ev.event_id };
+			if ( ev.value != null ) payload.value = ev.value;
+			if ( ev.currency ) payload.currency = ev.currency;
+			if ( ev.items && ev.items.length ) payload.items = ev.items;
+			window.dataLayer.push( payload );
+		},
+		hotjar: function ( cfg, ev ) {
+			if ( cfg.site_id && ! loaded[ 'hotjar-' + cfg.site_id ] ) {
+				loaded[ 'hotjar-' + cfg.site_id ] = true;
+				window.hj = window.hj || function () { ( window.hj.q = window.hj.q || [] ).push( arguments ); };
+				window._hjSettings = { hjid: cfg.site_id, hjsv: 6 };
+				loadScript( 'https://static.hotjar.com/c/hotjar-' + encodeURIComponent( cfg.site_id ) + '.js?sv=6' );
+			}
+			if ( typeof window.hj === 'function' ) {
+				window.hj( 'event', ev.type );
+			}
 		}
 	};
 
