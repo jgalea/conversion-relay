@@ -6,6 +6,7 @@ namespace WPConversionHub\Destinations;
 
 use WPConversionHub\Event\NormalizedEvent;
 
+/** Contract every analytics/ads destination (GA4, Meta, Plausible, ...) implements. */
 interface DestinationInterface {
 
 	public const TRANSPORT_SERVER = 'server';

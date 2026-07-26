@@ -6,6 +6,7 @@ namespace WPConversionHub\Sources;
 
 use WPConversionHub\Hub\Dispatcher;
 
+/** Contract every event source (WooCommerce, Gravity Forms, core, ...) implements. */
 interface SourceInterface {
 
 	public function id(): string;

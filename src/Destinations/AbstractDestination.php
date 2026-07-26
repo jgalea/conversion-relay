@@ -9,6 +9,7 @@ use WPConversionHub\Support\Hashing;
 use WPConversionHub\Support\License;
 use WPConversionHub\Support\Settings;
 
+/** Shared config lookup and HTTP delivery helpers so concrete destinations only implement what differs. */
 abstract class AbstractDestination implements DestinationInterface {
 
 	public function consent_category(): string {
