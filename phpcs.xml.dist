@@ -28,7 +28,7 @@
 	<rule ref="WordPress.WP.I18n">
 		<properties>
 			<property name="text_domain" type="array">
-				<element value="wp-conversion-hub"/>
+				<element value="conversion-relay"/>
 			</property>
 		</properties>
 	</rule>
