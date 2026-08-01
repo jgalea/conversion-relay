@@ -6,21 +6,12 @@ namespace WPConversionHub\Destinations;
 
 use WPConversionHub\Event\NormalizedEvent;
 use WPConversionHub\Support\Hashing;
-use WPConversionHub\Support\License;
 use WPConversionHub\Support\Settings;
 
 abstract class AbstractDestination implements DestinationInterface {
 
 	public function consent_category(): string {
 		return self::CONSENT_ANALYTICS;
-	}
-
-	public function tier(): string {
-		return self::TIER_FREE;
-	}
-
-	public function pro_note(): string {
-		return '';
 	}
 
 	public function capabilities(): array {
@@ -70,7 +61,7 @@ abstract class AbstractDestination implements DestinationInterface {
 	 * @return array<string,string>
 	 */
 	protected function hashed_user_data( NormalizedEvent $event ): array {
-		if ( ! Settings::enhanced_conversions_enabled() || ! License::is_pro() || empty( $event->user_data ) ) {
+		if ( ! Settings::enhanced_conversions_enabled() || empty( $event->user_data ) ) {
 			return array();
 		}
 		return Hashing::user_data( $event->user_data );

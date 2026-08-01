@@ -6,7 +6,6 @@ namespace WPConversionHub\Admin;
 
 use WPConversionHub\Destinations\DestinationInterface;
 use WPConversionHub\Storage\EventLog;
-use WPConversionHub\Support\License;
 use WPConversionHub\Support\Registry;
 use WPConversionHub\Support\Settings;
 
@@ -91,26 +90,10 @@ final class SettingsPage {
 	private function render_destinations(): void {
 		echo '<table class="form-table" role="presentation"><tbody>';
 		foreach ( $this->registry->destinations() as $dest ) {
-			$id     = $dest->id();
-			$cfg    = Settings::dest_config( $id );
-			$is_pro = DestinationInterface::TIER_PRO === $dest->tier();
-			$locked = $is_pro && ! License::is_pro();
+			$id  = $dest->id();
+			$cfg = Settings::dest_config( $id );
 
-			$heading = esc_html( $dest->label() );
-			if ( $is_pro ) {
-				$heading .= ' <span class="wpch-pro-badge" style="font-size:11px;background:#0e8f82;color:#fff;padding:2px 7px;border-radius:3px;vertical-align:middle;">' . esc_html__( 'PRO', 'conversion-relay' ) . '</span>';
-			}
-			echo '<tr><th colspan="2"><h3>' . wp_kses_post( $heading ) . '</h3></th></tr>';
-
-			if ( $locked ) {
-				printf(
-					'<tr><td colspan="2"><p style="margin:0;color:#555;">%s</p><p style="margin:4px 0 0;"><a href="%s" target="_blank" rel="noopener">%s</a></p></td></tr>',
-					esc_html( $dest->pro_note() ),
-					esc_url( 'https://github.com/jgalea/conversion-relay' ),
-					esc_html__( 'Upgrade to unlock', 'conversion-relay' )
-				);
-				continue;
-			}
+			echo '<tr><th colspan="2"><h3>' . esc_html( $dest->label() ) . '</h3></th></tr>';
 
 			printf(
 				/* translators: %s: destination name. */

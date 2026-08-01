@@ -25,14 +25,6 @@ final class LinkedInAds extends AbstractDestination {
 		return self::CONSENT_ADS;
 	}
 
-	public function tier(): string {
-		return self::TIER_PRO;
-	}
-
-	public function pro_note(): string {
-		return 'Server-side Conversions API delivery to LinkedIn.';
-	}
-
 	public function capabilities(): array {
 		return array_merge(
 			parent::capabilities(),

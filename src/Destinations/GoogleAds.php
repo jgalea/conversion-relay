@@ -23,14 +23,6 @@ final class GoogleAds extends AbstractDestination {
 		return self::CONSENT_ADS;
 	}
 
-	public function tier(): string {
-		return self::TIER_PRO;
-	}
-
-	public function pro_note(): string {
-		return __( 'Google Ads conversion tracking with enhanced conversions.', 'conversion-relay' );
-	}
-
 	public function capabilities(): array {
 		return array_merge(
 			parent::capabilities(),

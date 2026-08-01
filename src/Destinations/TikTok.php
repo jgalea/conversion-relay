@@ -26,14 +26,6 @@ final class TikTok extends AbstractDestination {
 		return self::CONSENT_ADS;
 	}
 
-	public function tier(): string {
-		return self::TIER_PRO;
-	}
-
-	public function pro_note(): string {
-		return __( 'Server-side Events API delivery to TikTok.', 'conversion-relay' );
-	}
-
 	public function capabilities(): array {
 		return array_merge(
 			parent::capabilities(),

@@ -26,14 +26,6 @@ final class RedditAds extends AbstractDestination {
 		return self::CONSENT_ADS;
 	}
 
-	public function tier(): string {
-		return self::TIER_PRO;
-	}
-
-	public function pro_note(): string {
-		return __( 'Server-side Conversions API delivery to Reddit.', 'conversion-relay' );
-	}
-
 	public function capabilities(): array {
 		return array_merge(
 			parent::capabilities(),

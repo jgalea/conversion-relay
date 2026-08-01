@@ -30,14 +30,6 @@ final class MetaAds extends AbstractDestination {
 		return self::CONSENT_ADS;
 	}
 
-	public function tier(): string {
-		return self::TIER_PRO;
-	}
-
-	public function pro_note(): string {
-		return __( 'Pixel plus server-side Conversions API, with ad-blocker-proof attribution.', 'conversion-relay' );
-	}
-
 	public function capabilities(): array {
 		return array_merge(
 			parent::capabilities(),

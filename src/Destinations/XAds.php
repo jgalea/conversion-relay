@@ -19,14 +19,6 @@ final class XAds extends AbstractDestination {
 		return self::CONSENT_ADS;
 	}
 
-	public function tier(): string {
-		return self::TIER_PRO;
-	}
-
-	public function pro_note(): string {
-		return __( 'X (Twitter) website tag conversion tracking.', 'conversion-relay' );
-	}
-
 	public function transports(): array {
 		return array( self::TRANSPORT_CLIENT );
 	}
