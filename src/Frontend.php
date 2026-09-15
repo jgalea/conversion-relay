@@ -17,6 +17,8 @@ use WPConversionHub\Support\Settings;
  */
 final class Frontend {
 
+	private const RATE_KEY_GLOBAL = 'wpch_rl_global';
+
 	private Registry $registry;
 	private Dispatcher $dispatcher;
 
@@ -26,7 +28,6 @@ final class Frontend {
 	}
 
 	public function hooks(): void {
-		add_action( 'init', array( ClientQueue::class, 'ensure_cookie' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue' ) );
 		add_action( 'wp_footer', array( $this, 'print_data' ), 5 );
 		add_action( 'rest_api_init', array( $this, 'register_rest' ) );
@@ -120,8 +121,10 @@ final class Frontend {
 	 * @return \WP_REST_Response
 	 */
 	public function rest_event( $request ) {
+		// Answer 200 when throttled so a caller cannot use the status code to
+		// probe where the limit sits. Nothing is dispatched either way.
 		if ( ! $this->rest_rate_ok() ) {
-			return new \WP_REST_Response( array( 'ok' => false ), 429 );
+			return new \WP_REST_Response( array( 'ok' => true ), 200 );
 		}
 
 		$type = sanitize_key( (string) $request->get_param( 'type' ) );
@@ -160,14 +163,37 @@ final class Frontend {
 		return new \WP_REST_Response( array( 'ok' => true ), 200 );
 	}
 
+	/**
+	 * Per-IP and site-wide budgets for the public endpoint.
+	 *
+	 * REMOTE_ADDR is the proxy's address on any site behind Cloudflare or a load
+	 * balancer, which put every visitor in one bucket: one caller could exhaust
+	 * it and silence everyone else's events. Sites on a trusted proxy supply the
+	 * real address through wpch_client_ip; the forwarded headers are never read
+	 * unconditionally, because anyone can set them. The site-wide budget bounds
+	 * the aggregate regardless of how many addresses a caller can spread across.
+	 */
 	private function rest_rate_ok(): bool {
-		$ip   = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'anon';
-		$key  = 'wpch_rl_' . md5( $ip );
-		$hits = (int) get_transient( $key );
-		if ( $hits >= 60 ) {
+		$remote = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'anon';
+		$ip     = (string) apply_filters( 'wpch_client_ip', $remote );
+		$ip     = '' === $ip ? 'anon' : $ip;
+
+		$per_ip = (int) apply_filters( 'wpch_rest_rate_limit', 60 );
+		$global = (int) apply_filters( 'wpch_rest_rate_limit_global', 600 );
+
+		$ip_key  = 'wpch_rl_' . md5( $ip );
+		$ip_hits = (int) get_transient( $ip_key );
+		if ( $ip_hits >= $per_ip ) {
 			return false;
 		}
-		set_transient( $key, $hits + 1, MINUTE_IN_SECONDS );
+
+		$all_hits = (int) get_transient( self::RATE_KEY_GLOBAL );
+		if ( $all_hits >= $global ) {
+			return false;
+		}
+
+		set_transient( $ip_key, $ip_hits + 1, MINUTE_IN_SECONDS );
+		set_transient( self::RATE_KEY_GLOBAL, $all_hits + 1, MINUTE_IN_SECONDS );
 		return true;
 	}
 }

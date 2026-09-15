@@ -43,6 +43,12 @@ final class Plugin {
 
 		add_action( Queue::HOOK, array( $this->dispatcher, 'deliver' ) );
 
+		// Declare support so the WP Consent API treats this plugin as compliant
+		// and surfaces it to the site's consent banner.
+		if ( defined( 'WPCH_FILE' ) ) {
+			add_filter( 'wp_consent_api_registered_' . plugin_basename( WPCH_FILE ), '__return_true' );
+		}
+
 		( new Frontend( $this->registry, $this->dispatcher ) )->hooks();
 
 		if ( is_admin() ) {

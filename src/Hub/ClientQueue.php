@@ -34,6 +34,11 @@ final class ClientQueue {
 
 		self::$request_buffer[] = $entry;
 
+		// Mint the cookie here rather than on every init. Setting it for every
+		// visitor dropped a first-party cookie before anything needed one, and
+		// made responses uncacheable on proxies that refuse to cache Set-Cookie.
+		self::ensure_cookie();
+
 		$key = self::key();
 		if ( '' === $key ) {
 			return;
@@ -74,7 +79,13 @@ final class ClientQueue {
 	}
 
 	private static function key(): string {
-		return isset( $_COOKIE[ self::COOKIE ] ) ? preg_replace( '/[^A-Za-z0-9]/', '', sanitize_text_field( wp_unslash( $_COOKIE[ self::COOKIE ] ) ) ) : '';
+		if ( ! isset( $_COOKIE[ self::COOKIE ] ) ) {
+			return '';
+		}
+		$key = preg_replace( '/[^A-Za-z0-9]/', '', sanitize_text_field( wp_unslash( $_COOKIE[ self::COOKIE ] ) ) );
+		// The cookie is visitor-controlled and the key becomes part of an option
+		// name, so cap it well under the column width we mint into.
+		return substr( (string) $key, 0, 40 );
 	}
 
 	private static function transient( string $key ): string {

@@ -13,6 +13,11 @@ use WPConversionHub\Support\Settings;
  * is granted. Integrators refine the decision through the `wpch_consent` filter,
  * which receives full request context so it works where no browser cookie is
  * readable (checkout, REST, cron, webhooks).
+ *
+ * When the WP Consent API is installed, the visitor's actual choice is the
+ * signal. Without it there is nothing to read, so the configured per-category
+ * default stands in, which is why "Gate destinations on consent" on its own
+ * cannot do more than apply a policy.
  */
 final class Consent {
 
@@ -33,8 +38,29 @@ final class Consent {
 			: ( $settings['analytics_default'] ?? 'granted' );
 
 		$granted = 'granted' === $default;
+		$reason  = 'default';
 
-		return (bool) apply_filters( 'wpch_consent', $granted, $category, $event, 'default' );
+		$visitor = self::visitor_consent( $category );
+		if ( null !== $visitor ) {
+			$granted = $visitor;
+			$reason  = 'consent_api';
+		}
+
+		return (bool) apply_filters( 'wpch_consent', $granted, $category, $event, $reason );
+	}
+
+	/**
+	 * The visitor's own choice, via the WP Consent API, or null when that plugin
+	 * is not installed and there is no choice to read.
+	 */
+	private static function visitor_consent( string $category ): ?bool {
+		if ( ! function_exists( 'wp_has_consent' ) ) {
+			return null;
+		}
+
+		$mapped = DestinationInterface::CONSENT_ADS === $category ? 'marketing' : 'statistics';
+
+		return (bool) wp_has_consent( $mapped );
 	}
 
 	private static function dnt_enabled(): bool {

@@ -160,13 +160,19 @@ final class SettingsPage {
 				$display   = $is_secret && '' !== $value ? '' : $value;
 				$ph        = $is_secret && '' !== $value ? esc_html__( 'saved — leave blank to keep', 'conversion-relay' ) : '';
 				$help      = isset( $field['help'] ) ? '<p class="description">' . esc_html( (string) $field['help'] ) . '</p>' : '';
+				// API tokens render masked, and out of the browser's autofill
+				// history, the same as any other credential field.
+				$type = $is_secret ? 'password' : 'text';
+				$auto = $is_secret ? 'new-password' : 'off';
 				printf(
-					'<tr><th scope="row">%s</th><td><input type="text" class="regular-text" name="dest[%s][%s]" value="%s" placeholder="%s" autocomplete="off" />%s</td></tr>',
+					'<tr><th scope="row">%s</th><td><input type="%s" class="regular-text" name="dest[%s][%s]" value="%s" placeholder="%s" autocomplete="%s" />%s</td></tr>',
 					esc_html( (string) $field['label'] ),
+					esc_attr( $type ),
 					esc_attr( $id ),
 					esc_attr( $key ),
 					esc_attr( $display ),
 					esc_attr( $ph ),
+					esc_attr( $auto ),
 					wp_kses_post( $help )
 				);
 			}
@@ -211,6 +217,14 @@ final class SettingsPage {
 			esc_html__( 'Require consent', 'conversion-relay' ),
 			checked( ! empty( $c['require_consent'] ), true, false ),
 			esc_html__( 'Gate destinations on consent', 'conversion-relay' )
+		);
+		printf(
+			'<tr><th scope="row"></th><td><p class="description">%s</p></td></tr>',
+			esc_html(
+				function_exists( 'wp_has_consent' )
+					? __( 'The WP Consent API is active, so each visitor\'s own choice decides. The defaults below apply only before a choice is recorded.', 'conversion-relay' )
+					: __( 'No consent plugin is providing a visitor signal, so the defaults below are applied to everyone. Install a WP Consent API compatible banner for per-visitor consent.', 'conversion-relay' )
+			)
 		);
 		printf(
 			'<tr><th scope="row">%s</th><td><label><input type="checkbox" name="consent[respect_dnt]" value="1" %s /> %s</label></td></tr>',

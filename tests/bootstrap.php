@@ -27,3 +27,27 @@ if ( ! function_exists( 'esc_attr__' ) ) {
 		return $text;
 	}
 }
+
+// Option storage and filters, so unit tests can drive code that reads settings.
+if ( ! function_exists( 'get_option' ) ) {
+	function get_option( $name, $default = false ) { // phpcs:ignore
+		return $GLOBALS['wpch_test_options'][ $name ] ?? $default;
+	}
+}
+if ( ! function_exists( 'update_option' ) ) {
+	function update_option( $name, $value, $autoload = null ) { // phpcs:ignore
+		$GLOBALS['wpch_test_options'][ $name ] = $value;
+		return true;
+	}
+}
+if ( ! function_exists( 'apply_filters' ) ) {
+	function apply_filters( $hook, $value, ...$args ) { // phpcs:ignore
+		return $value;
+	}
+}
+
+if ( ! function_exists( 'wp_json_encode_fallback' ) ) {
+	function wp_json_encode_fallback( $data ) { // phpcs:ignore
+		return json_encode( $data ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- wp_json_encode does not exist in the unit suite.
+	}
+}

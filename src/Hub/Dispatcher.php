@@ -7,6 +7,7 @@ namespace WPConversionHub\Hub;
 use WPConversionHub\Destinations\DestinationInterface;
 use WPConversionHub\Event\NormalizedEvent;
 use WPConversionHub\Storage\EventLog;
+use WPConversionHub\Support\Hashing;
 use WPConversionHub\Support\Identity;
 use WPConversionHub\Support\Registry;
 use WPConversionHub\Support\Settings;
@@ -55,7 +56,7 @@ final class Dispatcher {
 			$server_capable = in_array( DestinationInterface::TRANSPORT_SERVER, $transports, true );
 			$client_capable = in_array( DestinationInterface::TRANSPORT_CLIENT, $transports, true );
 
-			if ( $server_capable && 'client_only' !== $channel ) {
+			if ( $server_capable && 'client_only' !== $channel && self::server_allowed( $event, $destination ) ) {
 				$this->route_server( $event, $destination );
 				continue;
 			}
@@ -72,8 +73,7 @@ final class Dispatcher {
 
 	private function route_server( NormalizedEvent $event, DestinationInterface $destination ): void {
 		// The event log persists for up to 30 days, so keep raw PII and the
-		// visitor's IP/UA out of it. The delivery worker still receives the full
-		// event through the (short-lived) queue payload.
+		// visitor's IP/UA out of it.
 		$log_payload = $event->to_array();
 		unset( $log_payload['user_data'], $log_payload['identity'] );
 
@@ -87,8 +87,52 @@ final class Dispatcher {
 		);
 
 		if ( $recorded ) {
-			Queue::enqueue( $event->to_array(), $destination->id() );
+			Queue::enqueue( self::queue_payload( $event ), $destination->id() );
 		}
+	}
+
+	/**
+	 * Whether an event may fan out to a server transport.
+	 *
+	 * Client-origin events arrive on a public REST route that any visitor can
+	 * call, and each one that reaches a server destination costs a log row, a
+	 * queue row and an outbound request against the site owner's vendor quota.
+	 * None of the built-in destinations need scroll or time-on-page server-side,
+	 * since the client transport already carries them, so client-origin events
+	 * stay client-side unless a site explicitly opts a destination back in.
+	 */
+	private static function server_allowed( NormalizedEvent $event, DestinationInterface $destination ): bool {
+		if ( 'client' !== $event->origin ) {
+			return true;
+		}
+
+		return (bool) apply_filters( 'wpch_route_client_origin_to_server', false, $destination->id(), $event );
+	}
+
+	/**
+	 * The payload handed to the delivery worker.
+	 *
+	 * Action Scheduler keeps a completed action's args for a month and a failed
+	 * one's for three, so the queue is long-lived storage, not a hand-off. Raw
+	 * customer data must not be written into it: hash it here when enhanced
+	 * conversions are on, and drop it entirely when they are off, so what lands
+	 * in wp_actionscheduler_actions matches what the site was actually opted in
+	 * to send. Hashing::user_data passes through values that are already hashed,
+	 * which keeps the retry path idempotent.
+	 *
+	 * @return array<string,mixed>
+	 */
+	private static function queue_payload( NormalizedEvent $event ): array {
+		$payload = $event->to_array();
+
+		$payload['user_data'] = Settings::enhanced_conversions_enabled()
+			? Hashing::user_data( is_array( $event->user_data ) ? $event->user_data : array() )
+			: array();
+
+		// Destinations that need the user agent read it from the live request.
+		unset( $payload['identity']['user_agent'] );
+
+		return $payload;
 	}
 
 	/**
@@ -126,7 +170,7 @@ final class Dispatcher {
 		EventLog::mark_failed( $event->event_id, $destination, $result->message(), $attempts );
 
 		if ( $attempts < EventLog::MAX_ATTEMPTS ) {
-			Queue::enqueue( $event->to_array(), $destination, Queue::backoff_delay( $attempts ) );
+			Queue::enqueue( self::queue_payload( $event ), $destination, Queue::backoff_delay( $attempts ) );
 		}
 	}
 

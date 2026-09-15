@@ -85,9 +85,13 @@ final class Matomo extends AbstractDestination {
 			}
 		}
 
-		$response = wp_safe_remote_get(
-			add_query_arg( $params, $endpoint ),
+		// Form-encoded POST rather than a query string: token_auth in a URL ends
+		// up in the Matomo host's access logs, and in any reverse proxy's in
+		// front of it. The Tracking API accepts both.
+		$response = wp_safe_remote_post(
+			$endpoint,
 			array(
+				'body'        => $params,
 				'timeout'     => 5,
 				'redirection' => 0,
 			)
