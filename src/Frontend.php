@@ -69,9 +69,11 @@ final class Frontend {
 		}
 		$forms = array_values( array_unique( $forms ) );
 
+		$media = Settings::source_enabled( 'media' );
+
 		$events = ClientQueue::flush();
 
-		if ( empty( $configs ) && empty( $events ) && empty( $forms ) ) {
+		if ( empty( $configs ) && empty( $events ) && empty( $forms ) && ! $media ) {
 			return;
 		}
 
@@ -81,6 +83,7 @@ final class Frontend {
 			'destinations' => $configs,
 			'events'       => array_values( $events ),
 			'forms'        => $forms,
+			'media'        => $media,
 		);
 
 		wp_print_inline_script_tag(

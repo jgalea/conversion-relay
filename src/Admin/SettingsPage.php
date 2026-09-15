@@ -27,6 +27,57 @@ final class SettingsPage {
 	public function hooks(): void {
 		add_action( 'admin_menu', array( $this, 'menu' ) );
 		add_action( 'admin_post_wpch_save', array( $this, 'save' ) );
+		add_action( 'admin_notices', array( $this, 'inactive_notice' ) );
+	}
+
+	/**
+	 * An unconfigured install sends nothing and looks identical to a working one,
+	 * so say so rather than failing silently.
+	 */
+	public function inactive_notice(): void {
+		if ( ! current_user_can( self::CAP ) ) {
+			return;
+		}
+
+		// Redundant on our own screen, where the empty state is already visible.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+		if ( self::SLUG === $page ) {
+			return;
+		}
+
+		$has_destination = false;
+		foreach ( $this->registry->destinations() as $destination ) {
+			if ( Settings::dest_enabled( $destination->id() ) && $destination->is_configured() ) {
+				$has_destination = true;
+				break;
+			}
+		}
+
+		$has_source = false;
+		foreach ( $this->registry->sources() as $source ) {
+			if ( Settings::source_enabled( $source->id() ) ) {
+				$has_source = true;
+				break;
+			}
+		}
+
+		if ( $has_destination && $has_source ) {
+			return;
+		}
+
+		if ( ! $has_destination ) {
+			$message = __( 'Conversion Relay is active but no destination is enabled, so no conversions are being sent anywhere.', 'conversion-relay' );
+		} else {
+			$message = __( 'Conversion Relay has a destination enabled but no sources, so there are no conversions to send.', 'conversion-relay' );
+		}
+
+		printf(
+			'<div class="notice notice-warning"><p>%s <a href="%s">%s</a></p></div>',
+			esc_html( $message ),
+			esc_url( admin_url( 'options-general.php?page=' . self::SLUG ) ),
+			esc_html__( 'Open settings', 'conversion-relay' )
+		);
 	}
 
 	public function menu(): void {
@@ -108,13 +159,15 @@ final class SettingsPage {
 				$value     = (string) ( $cfg[ $key ] ?? '' );
 				$display   = $is_secret && '' !== $value ? '' : $value;
 				$ph        = $is_secret && '' !== $value ? esc_html__( 'saved — leave blank to keep', 'conversion-relay' ) : '';
+				$help      = isset( $field['help'] ) ? '<p class="description">' . esc_html( (string) $field['help'] ) . '</p>' : '';
 				printf(
-					'<tr><th scope="row">%s</th><td><input type="text" class="regular-text" name="dest[%s][%s]" value="%s" placeholder="%s" autocomplete="off" /></td></tr>',
+					'<tr><th scope="row">%s</th><td><input type="text" class="regular-text" name="dest[%s][%s]" value="%s" placeholder="%s" autocomplete="off" />%s</td></tr>',
 					esc_html( (string) $field['label'] ),
 					esc_attr( $id ),
 					esc_attr( $key ),
 					esc_attr( $display ),
-					esc_attr( $ph )
+					esc_attr( $ph ),
+					wp_kses_post( $help )
 				);
 			}
 		}

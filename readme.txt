@@ -4,7 +4,7 @@ Tags: conversion tracking, analytics, google analytics, meta pixel, woocommerce
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 0.2.0
+Stable tag: 0.3.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,19 +69,19 @@ If you switch on enhanced conversions (off by default), customer email, phone an
 name are SHA-256 hashed before sending. Plain-text customer details are never
 transmitted.
 
-Google (Google Analytics 4, Google Ads, Google Tag Manager)
+**Google (Google Analytics 4, Google Ads, Google Tag Manager)**
 Events are sent to the GA4 Measurement Protocol at google-analytics.com from your
 server, and the `gtag.js` or `gtm.js` script is loaded from googletagmanager.com
 in the visitor's browser to fire client-side conversions. Terms of service:
 https://policies.google.com/terms Privacy policy: https://policies.google.com/privacy
 
-Meta (Facebook and Instagram Ads)
+**Meta (Facebook and Instagram Ads)**
 Conversions are sent to the Meta Conversions API at graph.facebook.com from your
 server, and the Meta Pixel is loaded from connect.facebook.net in the visitor's
 browser. Terms of service: https://www.facebook.com/legal/terms Privacy policy:
 https://www.facebook.com/privacy/policy/
 
-Microsoft (Microsoft Advertising and Clarity)
+**Microsoft (Microsoft Advertising and Clarity)**
 Conversions are sent through the UET tag loaded from bat.bing.com, and Clarity
 events through the tag loaded from clarity.ms, both in the visitor's browser.
 Microsoft Advertising agreement:
@@ -89,60 +89,60 @@ https://about.ads.microsoft.com/en-us/resources/policies/microsoft-advertising-a
 Clarity terms: https://clarity.microsoft.com/terms Privacy statement:
 https://www.microsoft.com/en-us/privacy/privacystatement
 
-TikTok Ads
+**TikTok Ads**
 Conversions are sent to the TikTok Events API at business-api.tiktok.com from
 your server. Business products terms:
 https://ads.tiktok.com/i18n/official/policy/business-products-terms Privacy
 policy: https://www.tiktok.com/legal/page/global/privacy-policy/en
 
-Pinterest Ads
+**Pinterest Ads**
 Conversions are sent to the Pinterest Conversions API at api.pinterest.com from
 your server. Terms of service: https://business.pinterest.com/business-terms-of-service/
 Privacy policy: https://policy.pinterest.com/en/privacy-policy
 
-Reddit Ads
+**Reddit Ads**
 Conversions are sent to the Reddit Conversions API at ads-api.reddit.com from
 your server. Advertising services agreement:
 https://business.reddithelp.com/s/article/Reddit-Advertising-Services-Agreement
 Privacy policy: https://www.reddit.com/policies/privacy-policy
 
-LinkedIn Ads
+**LinkedIn Ads**
 Conversions are sent to the LinkedIn Conversions API at api.linkedin.com from
 your server. Ads agreement: https://www.linkedin.com/legal/sas-terms Privacy
 policy: https://www.linkedin.com/legal/privacy-policy
 
-X (Twitter) Ads
+**X (Twitter) Ads**
 Conversions are fired through the X website tag loaded from
 static.ads-twitter.com in the visitor's browser. Ads terms:
 https://legal.x.com/ads-terms.html Privacy policy: https://x.com/en/privacy
 
-Hotjar
+**Hotjar**
 Events are sent through the Hotjar script loaded from static.hotjar.com in the
 visitor's browser. Terms of service:
 https://www.hotjar.com/legal/policies/terms-of-service/ Privacy policy:
 https://www.hotjar.com/legal/policies/privacy/
 
-Plausible Analytics
+**Plausible Analytics**
 Events are sent from your server to plausible.io, or to the self-hosted address
 you enter. Terms: https://plausible.io/terms Privacy policy:
 https://plausible.io/privacy
 
-PostHog
+**PostHog**
 Events are sent from your server to the PostHog host you enter, us.i.posthog.com
 by default. Terms: https://posthog.com/terms Privacy policy:
 https://posthog.com/privacy
 
-Umami
+**Umami**
 Events are sent from your server to the Umami host you enter, cloud.umami.is by
 default. Terms: https://umami.is/terms Privacy policy: https://umami.is/privacy
 
-Matomo
+**Matomo**
 Events are sent from your server to the Matomo address you enter, which is your
 own instance or Matomo Cloud. Cloud terms:
 https://matomo.org/matomo-cloud-terms-of-service/ Privacy policy:
 https://matomo.org/privacy-policy/
 
-Webhook
+**Webhook**
 If you enable the Webhook destination, the full normalized event is POSTed as
 JSON to the URL you enter. You control that endpoint and the terms that apply to
 it.
@@ -191,6 +191,13 @@ Yes. Register your own source or destination with `wpch_register_source` /
 
 == Changelog ==
 
+= 0.3.0 =
+* Warn in the admin when the plugin is active but has no destination or no
+  sources enabled, instead of silently sending nothing.
+* New Media source: tracks the first play of each video and audio element.
+* Fathom destination takes an optional event label prefix, so its events stay on
+  their own rows when another tool reports to the same site.
+
 = 0.2.0 =
 * Every destination is now available to every user, with no license checks.
 * Documented all external services in the readme.
@@ -200,6 +207,10 @@ Yes. Register your own source or destination with `wpch_register_source` /
   destinations across analytics and advertising.
 
 == Upgrade Notice ==
+
+= 0.3.0 =
+Adds a warning when nothing is configured, media play tracking, and an optional
+Fathom label prefix.
 
 = 0.2.0 =
 All destinations unlocked and external services documented.

@@ -28,10 +28,16 @@ final class Fathom extends AbstractDestination {
 
 	public function settings_fields(): array {
 		return array(
-			'site_id' => array(
+			'site_id'      => array(
 				'label'  => __( 'Site ID (ABCDEFGH)', 'conversion-relay' ),
 				'type'   => 'text',
 				'secret' => false,
+			),
+			'label_prefix' => array(
+				'label'  => __( 'Event label prefix', 'conversion-relay' ),
+				'type'   => 'text',
+				'secret' => false,
+				'help'   => __( 'Prepended to every event name sent to Fathom. Use it to keep these events on their own rows when another tool already reports conversions to the same site.', 'conversion-relay' ),
 			),
 		);
 	}
@@ -41,6 +47,9 @@ final class Fathom extends AbstractDestination {
 	}
 
 	public function client_config(): array {
-		return array( 'site_id' => $this->get( 'site_id' ) );
+		return array(
+			'site_id'      => $this->get( 'site_id' ),
+			'label_prefix' => $this->get( 'label_prefix' ),
+		);
 	}
 }

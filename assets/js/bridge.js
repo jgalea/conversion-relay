@@ -123,7 +123,7 @@
 		fathom: function ( cfg, ev ) {
 			if ( window.fathom && typeof window.fathom.trackEvent === 'function' ) {
 				var opts = ev.value != null ? { _value: Math.round( ev.value * 100 ) } : {};
-				window.fathom.trackEvent( ev.type, opts );
+				window.fathom.trackEvent( ( cfg.label_prefix || '' ) + ev.type, opts );
 			}
 		},
 		umami: function ( cfg, ev ) {
@@ -348,4 +348,29 @@
 			}
 		}, true );
 	} );
+
+	// First play of each <video>/<audio>. Media events don't bubble, so listen in
+	// the capture phase, and fire once per element so resuming after a pause isn't
+	// counted again. Third-party iframe embeds (YouTube, Vimeo) are out of reach
+	// here and need their own player API.
+	if ( data.media ) {
+		document.addEventListener( 'play', function ( e ) {
+			var el = e.target;
+			if ( ! el || ! el.tagName || el.wpchPlayed ) {
+				return;
+			}
+			var tag = el.tagName.toLowerCase();
+			if ( 'video' !== tag && 'audio' !== tag ) {
+				return;
+			}
+			el.wpchPlayed = true;
+			window.wpch.track( 'play', {
+				meta: {
+					media_type: tag,
+					media_id: el.id || '',
+					media_src: ( el.currentSrc || el.src || '' ).split( '/' ).pop().slice( 0, 100 )
+				}
+			} );
+		}, true );
+	}
 }() );

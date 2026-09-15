@@ -60,6 +60,7 @@ final class Plugin {
 	private function register_builtins(): void {
 		$sources = array(
 			Sources\Core::class,
+			Sources\Media::class,
 			Sources\WooCommerce::class,
 			Sources\Edd::class,
 			Sources\GravityForms::class,
