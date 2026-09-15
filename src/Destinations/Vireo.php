@@ -42,7 +42,7 @@ final class Vireo extends AbstractDestination {
 
 	public function send_server( NormalizedEvent $event ): DeliveryResult {
 		if ( ! function_exists( 'vireo_track_event' ) ) {
-			return DeliveryResult::failure( 'Vireo Analytics is not active.' );
+			return DeliveryResult::failure( __( 'Vireo Analytics is not active.', 'conversion-relay' ) );
 		}
 
 		$value = '';
@@ -54,6 +54,6 @@ final class Vireo extends AbstractDestination {
 
 		vireo_track_event( $event->type, $value );
 
-		return DeliveryResult::success( 'Recorded to Vireo.' );
+		return DeliveryResult::success( __( 'Recorded to Vireo.', 'conversion-relay' ) );
 	}
 }

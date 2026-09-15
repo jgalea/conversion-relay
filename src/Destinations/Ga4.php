@@ -69,7 +69,7 @@ final class Ga4 extends AbstractDestination {
 	public function send_server( NormalizedEvent $event ): DeliveryResult {
 		$api_secret = $this->get( 'api_secret' );
 		if ( '' === $api_secret ) {
-			return DeliveryResult::failure( 'No Measurement Protocol API secret configured.' );
+			return DeliveryResult::failure( __( 'No Measurement Protocol API secret configured.', 'conversion-relay' ) );
 		}
 
 		$client_id = (string) ( $event->identity['client_id'] ?? '' );
