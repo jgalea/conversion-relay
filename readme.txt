@@ -2,9 +2,9 @@
 Contributors: jeangalea
 Tags: conversion tracking, analytics, google analytics, meta pixel, woocommerce
 Requires at least: 6.2
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.3.0
+Stable tag: 0.3.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -191,6 +191,20 @@ Yes. Register your own source or destination with `wpch_register_source` /
 
 == Changelog ==
 
+= 0.3.1 =
+* Customer data is no longer written to the delivery queue in the clear. It is
+  hashed when enhanced conversions are on and omitted when they are off, so
+  nothing readable is left behind in Action Scheduler's tables.
+* The Webhook destination now honours the enhanced conversions setting like
+  every other destination, and requires an https endpoint.
+* The public event endpoint no longer forwards browser-side events to server
+  destinations, and its rate limiting works correctly behind a proxy or CDN.
+* Consent now follows the visitor's own choice wherever a WP Consent API
+  compatible plugin provides one. The consent screen says which of the two
+  regimes is in force instead of implying a per-visitor signal.
+* Matomo's token is sent in the request body rather than the URL, so it stays
+  out of server logs. API keys and tokens are masked on the settings screen.
+
 = 0.3.0 =
 * Warn in the admin when the plugin is active but has no destination or no
   sources enabled, instead of silently sending nothing.
@@ -207,6 +221,10 @@ Yes. Register your own source or destination with `wpch_register_source` /
   destinations across analytics and advertising.
 
 == Upgrade Notice ==
+
+= 0.3.1 =
+Privacy and security fixes. Recommended for every site, particularly any using
+WooCommerce with a server-side destination.
 
 = 0.3.0 =
 Adds a warning when nothing is configured, media play tracking, and an optional
