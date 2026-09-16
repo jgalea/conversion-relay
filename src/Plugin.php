@@ -12,6 +12,7 @@ use WPConversionHub\Storage\Schema;
 use WPConversionHub\Support\Registry;
 use WPConversionHub\Support\Settings;
 
+/** Composition root: builds the registry and dispatcher, wires WordPress hooks, boots once per request. */
 final class Plugin {
 
 	private static ?Plugin $instance = null;
