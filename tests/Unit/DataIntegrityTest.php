@@ -351,6 +351,18 @@ final class DataIntegrityTest extends TestCase {
 		$this->assertFalse( get_option( 'wpch_notice_event_lists' ) );
 	}
 
+	public function testClientEventListsMatchWhatTheServerAccepts(): void {
+		$this->configure( array( 'google_ads' => array( 'enabled' => true ), 'ga4' => array( 'enabled' => true ) ) );
+		$settings = \WPConversionHub\Support\Settings::class;
+
+		$this->assertSame( array( 'purchase' ), $settings::dest_events( 'google_ads' ) );
+		$this->assertNull( $settings::dest_events( 'ga4' ) );
+		foreach ( \WPConversionHub\Event\EventType::all() as $type ) {
+			$events = $settings::dest_events( 'google_ads' );
+			$this->assertSame( in_array( $type, $events, true ), $settings::dest_accepts( 'google_ads', $type ) );
+		}
+	}
+
 	public function testStatusFiltersAndRetryOnlyTouchRowsThatAreNotWaiting(): void {
 		EventLog::record_pending( 'a', 'meta', 'purchase', 'woocommerce', '1', array( 'type' => 'purchase', 'source' => 'woocommerce' ) );
 		EventLog::record_pending( 'b', 'ga4', 'purchase', 'woocommerce', '2', array( 'type' => 'purchase', 'source' => 'woocommerce' ) );

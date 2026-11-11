@@ -54,18 +54,30 @@
 		};
 	}
 
-	function ensureGtag( id ) {
+	function defineGtag() {
 		window.dataLayer = window.dataLayer || [];
 		if ( ! window.gtag ) {
 			window.gtag = function () {
 				window.dataLayer.push( arguments );
 			};
-			if ( data.consent ) {
-				window.gtag( 'consent', 'default', consentSignals() );
-				document.addEventListener( 'wp_listen_for_consent_change', function ( e ) {
-					window.gtag( 'consent', 'update', consentSignals( e.detail ) );
-				} );
-			}
+		}
+	}
+
+	// The server prints a denied default in the head. Replace it with the
+	// visitor's actual state once, then follow their later choices.
+	if ( data.consent ) {
+		defineGtag();
+		window.gtag( 'consent', 'update', consentSignals() );
+		document.addEventListener( 'wp_listen_for_consent_change', function ( e ) {
+			window.gtag( 'consent', 'update', consentSignals( e.detail ) );
+		} );
+	}
+
+	function ensureGtag( id ) {
+		var siteOwnsGtag = !! window.gtag && ! window.wpchGtagStub;
+		defineGtag();
+		if ( ! siteOwnsGtag && ! loaded.gtagJs ) {
+			loaded.gtagJs = true;
 			window.gtag( 'js', new Date() );
 		}
 		if ( id && ! loaded[ 'gtag-config-' + id ] ) {
@@ -355,6 +367,25 @@
 		} catch ( e ) {}
 	}
 
+	// Same rules as the server: the destination's event list, then consent.
+	function permitted( id, type ) {
+		var rule = ( data.rules || {} )[ id ];
+		if ( rule && rule.events && rule.events.indexOf( type ) === -1 ) {
+			return false;
+		}
+		var gate = data.gate;
+		if ( ! gate ) {
+			return true;
+		}
+		if ( gate.dnt && ( navigator.doNotTrack === '1' || window.doNotTrack === '1' ) ) {
+			return false;
+		}
+		if ( rule && rule.category === 'advertising' ) {
+			return typeof window.wp_has_consent === 'function' ? !! window.wp_has_consent( 'marketing' ) : gate.ads;
+		}
+		return typeof window.wp_has_consent === 'function' ? !! window.wp_has_consent( 'statistics' ) : gate.analytics;
+	}
+
 	// Public API for custom + client-origin events.
 	window.wpch = window.wpch || {};
 	window.wpch.track = function ( type, params ) {
@@ -366,7 +397,9 @@
 			currency: params.currency || null,
 			items: params.items || []
 		};
-		fire( ev, params.destinations );
+		fire( ev, ( params.destinations || Object.keys( dest ) ).filter( function ( id ) {
+			return permitted( id, type );
+		} ) );
 
 		if ( data.restUrl && params.server !== false ) {
 			postEvent( JSON.stringify( { type: type, value: ev.value, meta: params.meta || {}, url: location.href } ), true );

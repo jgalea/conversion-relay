@@ -28,7 +28,8 @@ final class Frontend {
 
 	public function hooks(): void {
 		add_action( 'template_redirect', array( $this, 'keep_out_of_page_cache' ), 0 );
-		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue' ) );
+		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue' ), 20 );
+		add_action( 'wp_head', array( $this, 'print_consent_default' ), 1 );
 		add_action( 'wp_footer', array( $this, 'print_data' ), 5 );
 		add_action( 'rest_api_init', array( $this, 'register_rest' ) );
 	}
@@ -50,15 +51,44 @@ final class Frontend {
 		wp_register_script(
 			'wpch-bridge',
 			WPCH_URL . 'assets/js/bridge.js',
-			array(),
+			wp_script_is( 'wp-consent-api', 'registered' ) ? array( 'wp-consent-api' ) : array(),
 			WPCH_VERSION,
 			true
 		);
 		wp_enqueue_script( 'wpch-bridge' );
 	}
 
+	/**
+	 * Consent Mode v2 starts with everything denied, ahead of any gtag config on
+	 * the page, including one a theme or another plugin prints in the head. The
+	 * bridge then updates it to the visitor's actual state.
+	 */
+	public function print_consent_default(): void {
+		if ( is_admin() || ! $this->uses_consent_mode() ) {
+			return;
+		}
+		wp_print_inline_script_tag(
+			'window.dataLayer=window.dataLayer||[];if(!window.gtag){window.wpchGtagStub=true;window.gtag=function(){window.dataLayer.push(arguments);};}'
+			. "window.gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',wait_for_update:500});",
+			array( 'id' => 'wpch-consent-default' )
+		);
+	}
+
+	private function uses_consent_mode(): bool {
+		if ( empty( Settings::consent()['require_consent'] ) ) {
+			return false;
+		}
+		foreach ( array( 'ga4', 'google_ads' ) as $id ) {
+			if ( Settings::dest_enabled( $id ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public function print_data(): void {
 		$configs = array();
+		$rules   = array();
 		foreach ( $this->registry->destinations() as $destination ) {
 			if ( ! Settings::dest_enabled( $destination->id() ) || ! $destination->is_configured() ) {
 				continue;
@@ -67,6 +97,10 @@ final class Frontend {
 				continue;
 			}
 			$configs[ $destination->id() ] = $destination->client_config();
+			$rules[ $destination->id() ]   = array(
+				'category' => $destination->consent_category(),
+				'events'   => Settings::dest_events( $destination->id() ),
+			);
 		}
 
 		$forms = array();
@@ -89,15 +123,17 @@ final class Frontend {
 		}
 
 		$consent = Settings::consent();
-		$signals = ! empty( $consent['require_consent'] ) && ( isset( $configs['ga4'] ) || isset( $configs['google_ads'] ) )
-			? array(
-				'ads'       => 'granted' === ( $consent['ads_default'] ?? 'denied' ),
-				'analytics' => 'granted' === ( $consent['analytics_default'] ?? 'granted' ),
-			)
-			: null;
+		$levels  = array(
+			'ads'       => 'granted' === ( $consent['ads_default'] ?? 'denied' ),
+			'analytics' => 'granted' === ( $consent['analytics_default'] ?? 'granted' ),
+		);
+		$signals = ! empty( $consent['require_consent'] ) && ( isset( $configs['ga4'] ) || isset( $configs['google_ads'] ) ) ? $levels : null;
+		$gate    = ! empty( $consent['require_consent'] ) ? $levels + array( 'dnt' => ! empty( $consent['respect_dnt'] ) ) : null;
 
 		$data = array(
 			'consent'      => $signals,
+			'gate'         => $gate,
+			'rules'        => $rules,
 			'restUrl'      => esc_url_raw( rest_url( 'wpch/v1/event' ) ),
 			'nonce'        => wp_create_nonce( 'wp_rest' ),
 			'destinations' => $configs,

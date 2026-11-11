@@ -73,11 +73,21 @@ final class Settings {
 	 * as a conversion or has no standard name on the platform.
 	 */
 	public static function dest_accepts( string $id, string $type ): bool {
+		$events = self::dest_events( $id );
+		return null === $events || in_array( $type, $events, true );
+	}
+
+	/**
+	 * The event types a destination takes, or null when it takes everything.
+	 *
+	 * @return string[]|null
+	 */
+	public static function dest_events( string $id ): ?array {
 		$events = self::dest_config( $id )['events'] ?? null;
 		if ( ! is_array( $events ) ) {
 			$events = self::DEFAULT_EVENTS[ $id ] ?? null;
 		}
-		return null === $events || in_array( $type, $events, true );
+		return $events;
 	}
 
 	/**
