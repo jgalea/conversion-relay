@@ -95,10 +95,13 @@ final class WooCommerce extends AbstractSource {
 		$price   = is_object( $product ) && method_exists( $product, 'get_price' ) ? (float) $product->get_price() : null;
 		$name    = is_object( $product ) && method_exists( $product, 'get_name' ) ? (string) $product->get_name() : '';
 
-		$this->emit(
+		$ip  = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+		$key = wp_hash( $cart_item_key . '|' . $quantity . '|' . $ip );
+
+		$this->emit_public(
 			array(
 				'type'      => EventType::ADD_TO_CART,
-				'entity_id' => '',
+				'entity_id' => $key,
 				'meta'      => array( 'product_id' => $product_id ),
 				'value'     => null === $price ? null : $price * $quantity,
 				'currency'  => function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : null,
@@ -110,7 +113,8 @@ final class WooCommerce extends AbstractSource {
 						'price'     => $price,
 					),
 				),
-			)
+			),
+			$key
 		);
 	}
 

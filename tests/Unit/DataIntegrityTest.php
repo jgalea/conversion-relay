@@ -8,6 +8,7 @@ use WPConversionHub\Event\NormalizedEvent;
 use WPConversionHub\Hub\ClientQueue;
 use WPConversionHub\Sources\ContactForm7;
 use WPConversionHub\Sources\Core;
+use WPConversionHub\Sources\DownloadMonitor;
 use WPConversionHub\Sources\WooCommerce;
 use WPConversionHub\Storage\EventLog;
 
@@ -271,6 +272,35 @@ final class DataIntegrityTest extends TestCase {
 
 		$once = array_filter( array_keys( $GLOBALS['wpch_test_transients'] ), static fn( $k ) => 0 === strpos( $k, 'wpch_once_' ) );
 		$this->assertCount( 3, $once, 'only events that passed the limiter write a dedupe row' );
+	}
+
+	public function testAnonymousAddToCartAndDownloadsAreDedupedAndRateLimited(): void {
+		$woo = new WooCommerce();
+		$woo->register( $this->dispatcher );
+		$dlm = new DownloadMonitor();
+		$dlm->register( $this->dispatcher );
+
+		$woo->on_add_to_cart( 'abc', 5, 1, 0, null, null );
+		$woo->on_add_to_cart( 'abc', 5, 1, 0, null, null );
+		$this->assertCount( 1, $this->events, 'the same cart line is one event' );
+
+		$download = new class() {
+			public function get_id(): int {
+				return 9;
+			}
+			public function get_title(): string {
+				return 'File';
+			}
+		};
+		$dlm->on_download( $download );
+		$dlm->on_download( $download );
+		$this->assertCount( 2, $this->events, 'the same download from one visitor is one event' );
+
+		wpch_test_filter( 'wpch_rest_rate_limit', static fn() => 5 );
+		foreach ( range( 1, 40 ) as $n ) {
+			$woo->on_add_to_cart( 'k' . $n, 5, 1, 0, null, null );
+		}
+		$this->assertLessThanOrEqual( 5, count( $this->events ), 'add-to-cart floods share the budget' );
 	}
 
 	public function testStatusFiltersAndRetryOnlyTouchRowsThatAreNotWaiting(): void {
