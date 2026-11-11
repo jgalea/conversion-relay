@@ -61,7 +61,7 @@ final class LinkedInAds extends AbstractDestination {
 	public function send_server( NormalizedEvent $event ): DeliveryResult {
 		$access_token = $this->get( 'access_token' );
 		if ( '' === $access_token ) {
-			return DeliveryResult::failure( 'No LinkedIn access token configured.' );
+			return DeliveryResult::failure( __( 'No LinkedIn access token configured.', 'conversion-relay' ) );
 		}
 
 		$hashed = $this->hashed_user_data( $event );

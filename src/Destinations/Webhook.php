@@ -54,7 +54,7 @@ final class Webhook extends AbstractDestination {
 	public function send_server( NormalizedEvent $event ): DeliveryResult {
 		$url = $this->get( 'url' );
 		if ( ! $this->is_safe_url( $url ) ) {
-			return DeliveryResult::failure( 'Blocked or invalid webhook URL.' );
+			return DeliveryResult::failure( __( 'Blocked or invalid webhook URL.', 'conversion-relay' ) );
 		}
 
 		// Every other destination puts customer data through the enhanced-

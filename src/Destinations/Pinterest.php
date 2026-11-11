@@ -63,7 +63,7 @@ final class Pinterest extends AbstractDestination {
 	public function send_server( NormalizedEvent $event ): DeliveryResult {
 		$access_token = $this->get( 'access_token' );
 		if ( '' === $access_token ) {
-			return DeliveryResult::failure( 'No Pinterest access token configured.' );
+			return DeliveryResult::failure( __( 'No Pinterest access token configured.', 'conversion-relay' ) );
 		}
 
 		$body = array(

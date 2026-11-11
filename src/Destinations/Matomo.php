@@ -106,6 +106,10 @@ final class Matomo extends AbstractDestination {
 			return DeliveryResult::success( '', $code );
 		}
 
-		return DeliveryResult::failure( 'HTTP ' . $code, $code );
+		return DeliveryResult::failure(
+			/* translators: %d: HTTP status code. */
+			sprintf( __( 'HTTP %d', 'conversion-relay' ), $code ),
+			$code
+		);
 	}
 }
