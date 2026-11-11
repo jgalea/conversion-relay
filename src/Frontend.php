@@ -7,17 +7,16 @@ namespace WPConversionHub;
 use WPConversionHub\Destinations\DestinationInterface;
 use WPConversionHub\Hub\ClientQueue;
 use WPConversionHub\Hub\Dispatcher;
+use WPConversionHub\Hub\RateLimit;
 use WPConversionHub\Support\Registry;
 use WPConversionHub\Support\Settings;
 
 /**
  * Owns the browser side: enqueues the bridge, hands it the enabled client
  * destinations plus the redirect-safe queue of pending pixel events, and exposes
- * a REST endpoint for client-origin events (scroll, time on page, play).
+ * a REST endpoint for client-origin events (play, click).
  */
 final class Frontend {
-
-	private const RATE_KEY_GLOBAL = 'wpch_rl_global';
 
 	private Registry $registry;
 	private Dispatcher $dispatcher;
@@ -28,9 +27,21 @@ final class Frontend {
 	}
 
 	public function hooks(): void {
-		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue' ) );
+		add_action( 'template_redirect', array( $this, 'keep_out_of_page_cache' ), 0 );
+		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue' ), 20 );
+		add_action( 'wp_head', array( $this, 'print_consent_default' ), 1 );
 		add_action( 'wp_footer', array( $this, 'print_data' ), 5 );
 		add_action( 'rest_api_init', array( $this, 'register_rest' ) );
+	}
+
+	public function keep_out_of_page_cache(): void {
+		if ( ! ClientQueue::has_pending() ) {
+			return;
+		}
+		if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+			define( 'DONOTCACHEPAGE', true );
+		}
+		nocache_headers();
 	}
 
 	public function enqueue(): void {
@@ -40,15 +51,44 @@ final class Frontend {
 		wp_register_script(
 			'wpch-bridge',
 			WPCH_URL . 'assets/js/bridge.js',
-			array(),
+			wp_script_is( 'wp-consent-api', 'registered' ) ? array( 'wp-consent-api' ) : array(),
 			WPCH_VERSION,
 			true
 		);
 		wp_enqueue_script( 'wpch-bridge' );
 	}
 
+	/**
+	 * Consent Mode v2 starts with everything denied, ahead of any gtag config on
+	 * the page, including one a theme or another plugin prints in the head. The
+	 * bridge then updates it to the visitor's actual state.
+	 */
+	public function print_consent_default(): void {
+		if ( is_admin() || ! $this->uses_consent_mode() ) {
+			return;
+		}
+		wp_print_inline_script_tag(
+			'window.dataLayer=window.dataLayer||[];if(!window.gtag){window.wpchGtagStub=true;window.gtag=function(){window.dataLayer.push(arguments);};}'
+			. "window.gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',wait_for_update:500});",
+			array( 'id' => 'wpch-consent-default' )
+		);
+	}
+
+	private function uses_consent_mode(): bool {
+		if ( empty( Settings::consent()['require_consent'] ) ) {
+			return false;
+		}
+		foreach ( array( 'ga4', 'google_ads' ) as $id ) {
+			if ( Settings::dest_enabled( $id ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public function print_data(): void {
 		$configs = array();
+		$rules   = array();
 		foreach ( $this->registry->destinations() as $destination ) {
 			if ( ! Settings::dest_enabled( $destination->id() ) || ! $destination->is_configured() ) {
 				continue;
@@ -57,6 +97,10 @@ final class Frontend {
 				continue;
 			}
 			$configs[ $destination->id() ] = $destination->client_config();
+			$rules[ $destination->id() ]   = array(
+				'category' => $destination->consent_category(),
+				'events'   => Settings::dest_events( $destination->id() ),
+			);
 		}
 
 		$forms = array();
@@ -78,7 +122,18 @@ final class Frontend {
 			return;
 		}
 
+		$consent = Settings::consent();
+		$levels  = array(
+			'ads'       => 'granted' === ( $consent['ads_default'] ?? 'denied' ),
+			'analytics' => 'granted' === ( $consent['analytics_default'] ?? 'granted' ),
+		);
+		$signals = ! empty( $consent['require_consent'] ) && ( isset( $configs['ga4'] ) || isset( $configs['google_ads'] ) ) ? $levels : null;
+		$gate    = ! empty( $consent['require_consent'] ) ? $levels + array( 'dnt' => ! empty( $consent['respect_dnt'] ) ) : null;
+
 		$data = array(
+			'consent'      => $signals,
+			'gate'         => $gate,
+			'rules'        => $rules,
 			'restUrl'      => esc_url_raw( rest_url( 'wpch/v1/event' ) ),
 			'nonce'        => wp_create_nonce( 'wp_rest' ),
 			'destinations' => $configs,
@@ -103,6 +158,22 @@ final class Frontend {
 				'callback'            => array( $this, 'rest_event' ),
 			)
 		);
+
+		// A cached page keeps the nonce it was rendered with, which expires after a
+		// day. The bridge fetches a fresh one here when a post comes back 403.
+		register_rest_route(
+			'wpch/v1',
+			'/nonce',
+			array(
+				'methods'             => 'GET',
+				'permission_callback' => '__return_true',
+				'callback'            => static function () {
+					$response = new \WP_REST_Response( array( 'nonce' => wp_create_nonce( 'wp_rest' ) ), 200 );
+					$response->header( 'Cache-Control', 'no-store' );
+					return $response;
+				},
+			)
+		);
 	}
 
 	/**
@@ -123,7 +194,7 @@ final class Frontend {
 	public function rest_event( $request ) {
 		// Answer 200 when throttled so a caller cannot use the status code to
 		// probe where the limit sits. Nothing is dispatched either way.
-		if ( ! $this->rest_rate_ok() ) {
+		if ( ! RateLimit::ok() ) {
 			return new \WP_REST_Response( array( 'ok' => true ), 200 );
 		}
 
@@ -142,7 +213,7 @@ final class Frontend {
 
 		$meta = $request->get_param( 'meta' );
 		$meta = is_array( $meta ) ? $meta : array();
-		if ( count( $meta ) > 20 || strlen( (string) wp_json_encode( $meta ) ) > 2000 ) {
+		if ( count( $meta ) > 20 || false === wp_json_encode( $meta, 0, 3 ) || strlen( (string) wp_json_encode( $meta ) ) > 2000 ) {
 			$meta = array();
 		}
 		$meta = map_deep( $meta, 'sanitize_text_field' );
@@ -161,39 +232,5 @@ final class Frontend {
 		);
 
 		return new \WP_REST_Response( array( 'ok' => true ), 200 );
-	}
-
-	/**
-	 * Per-IP and site-wide budgets for the public endpoint.
-	 *
-	 * REMOTE_ADDR is the proxy's address on any site behind Cloudflare or a load
-	 * balancer, which put every visitor in one bucket: one caller could exhaust
-	 * it and silence everyone else's events. Sites on a trusted proxy supply the
-	 * real address through wpch_client_ip; the forwarded headers are never read
-	 * unconditionally, because anyone can set them. The site-wide budget bounds
-	 * the aggregate regardless of how many addresses a caller can spread across.
-	 */
-	private function rest_rate_ok(): bool {
-		$remote = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'anon';
-		$ip     = (string) apply_filters( 'wpch_client_ip', $remote );
-		$ip     = '' === $ip ? 'anon' : $ip;
-
-		$per_ip = (int) apply_filters( 'wpch_rest_rate_limit', 60 );
-		$global = (int) apply_filters( 'wpch_rest_rate_limit_global', 600 );
-
-		$ip_key  = 'wpch_rl_' . md5( $ip );
-		$ip_hits = (int) get_transient( $ip_key );
-		if ( $ip_hits >= $per_ip ) {
-			return false;
-		}
-
-		$all_hits = (int) get_transient( self::RATE_KEY_GLOBAL );
-		if ( $all_hits >= $global ) {
-			return false;
-		}
-
-		set_transient( $ip_key, $ip_hits + 1, MINUTE_IN_SECONDS );
-		set_transient( self::RATE_KEY_GLOBAL, $all_hits + 1, MINUTE_IN_SECONDS );
-		return true;
 	}
 }

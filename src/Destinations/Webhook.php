@@ -5,6 +5,7 @@ declare( strict_types=1 );
 namespace WPConversionHub\Destinations;
 
 use WPConversionHub\Event\NormalizedEvent;
+use WPConversionHub\Support\Settings;
 
 // Generic webhook destination with SSRF protection.
 final class Webhook extends AbstractDestination {
@@ -53,7 +54,7 @@ final class Webhook extends AbstractDestination {
 	public function send_server( NormalizedEvent $event ): DeliveryResult {
 		$url = $this->get( 'url' );
 		if ( ! $this->is_safe_url( $url ) ) {
-			return DeliveryResult::failure( 'Blocked or invalid webhook URL.' );
+			return DeliveryResult::failure( __( 'Blocked or invalid webhook URL.', 'conversion-relay' ) );
 		}
 
 		// Every other destination puts customer data through the enhanced-
@@ -63,28 +64,18 @@ final class Webhook extends AbstractDestination {
 		$payload              = $event->to_array();
 		$payload['user_data'] = $this->hashed_user_data( $event );
 		unset( $payload['identity']['user_agent'] );
+		if ( ! Settings::enhanced_conversions_enabled() ) {
+			$payload['identity'] = array_intersect_key( $payload['identity'], array_flip( array( 'client_id', 'session_id', 'session_number' ) ) );
+		}
 
 		return $this->post_json( $url, $payload );
 	}
 
 	private function is_safe_url( string $url ): bool {
-		$p = wp_parse_url( $url );
 		// https only: the payload carries customer data, so plaintext transport
 		// is not an option the admin should be able to pick by accident.
-		if ( empty( $p['host'] ) || ! isset( $p['scheme'] ) || 'https' !== $p['scheme'] ) {
-			return false;
-		}
-
-		$host = $p['host'];
-		if ( 'localhost' === strtolower( $host ) ) {
-			return false;
-		}
-
-		$ip = filter_var( $host, FILTER_VALIDATE_IP ) ? $host : gethostbyname( $host );
-		if ( false === filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
-			return false;
-		}
-
-		return true;
+		// wp_http_validate_url rejects private and reserved ranges, and
+		// wp_safe_remote_post checks again when the request is made.
+		return 0 === strpos( $url, 'https://' ) && false !== wp_http_validate_url( $url );
 	}
 }

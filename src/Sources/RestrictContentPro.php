@@ -38,9 +38,10 @@ final class RestrictContentPro extends AbstractSource {
 		$this->emit(
 			array(
 				'type'      => EventType::SUBSCRIBE,
-				'entity_id' => is_scalar( $member_id ) ? (string) $member_id : '',
+				'entity_id' => is_object( $rcp_payment ) && isset( $rcp_payment->id ) ? (string) $rcp_payment->id : '',
 				'meta'      => array(
-					'user_id' => is_scalar( $user_id ) ? $user_id : '',
+					'member_id' => is_scalar( $member_id ) ? $member_id : '',
+					'user_id'   => is_scalar( $user_id ) ? $user_id : '',
 				),
 			)
 		);

@@ -31,12 +31,53 @@
 		document.head.appendChild( s );
 	}
 
-	function ensureGtag( id ) {
+	// Google Consent Mode v2 signals: the configured defaults, replaced by the
+	// visitor's own choice when the WP Consent API has one.
+	function consentSignals( changed ) {
+		var c = data.consent;
+		var ads = c.ads;
+		var stats = c.analytics;
+		if ( typeof window.wp_has_consent === 'function' ) {
+			ads = window.wp_has_consent( 'marketing' );
+			stats = window.wp_has_consent( 'statistics' );
+		}
+		if ( changed ) {
+			if ( changed.marketing ) ads = changed.marketing === 'allow';
+			if ( changed.statistics ) stats = changed.statistics === 'allow';
+		}
+		var adState = ads ? 'granted' : 'denied';
+		return {
+			ad_storage: adState,
+			ad_user_data: adState,
+			ad_personalization: adState,
+			analytics_storage: stats ? 'granted' : 'denied'
+		};
+	}
+
+	function defineGtag() {
 		window.dataLayer = window.dataLayer || [];
 		if ( ! window.gtag ) {
 			window.gtag = function () {
 				window.dataLayer.push( arguments );
 			};
+		}
+	}
+
+	// The server prints a denied default in the head. Replace it with the
+	// visitor's actual state once, then follow their later choices.
+	if ( data.consent ) {
+		defineGtag();
+		window.gtag( 'consent', 'update', consentSignals() );
+		document.addEventListener( 'wp_listen_for_consent_change', function ( e ) {
+			window.gtag( 'consent', 'update', consentSignals( e.detail ) );
+		} );
+	}
+
+	function ensureGtag( id ) {
+		var siteOwnsGtag = !! window.gtag && ! window.wpchGtagStub;
+		defineGtag();
+		if ( ! siteOwnsGtag && ! loaded.gtagJs ) {
+			loaded.gtagJs = true;
 			window.gtag( 'js', new Date() );
 		}
 		if ( id && ! loaded[ 'gtag-config-' + id ] ) {
@@ -102,7 +143,11 @@
 		},
 		google_ads: function ( cfg, ev ) {
 			ensureGtag( cfg.conversion_id );
-			var sendTo = cfg.conversion_label ? cfg.conversion_id + '/' + cfg.conversion_label : cfg.conversion_id;
+			var label = ( cfg.labels && cfg.labels[ ev.type ] ) || ( ev.type === 'purchase' ? cfg.conversion_label : '' );
+			if ( ! label && ev.type !== 'purchase' ) {
+				return;
+			}
+			var sendTo = label ? cfg.conversion_id + '/' + label : cfg.conversion_id;
 			var params = { send_to: sendTo };
 			if ( ev.value != null ) params.value = ev.value;
 			if ( ev.currency ) params.currency = ev.currency;
@@ -274,7 +319,8 @@
 			var params = {};
 			if ( ev.value != null ) params.value = ev.value;
 			if ( ev.currency ) params.currency = ev.currency;
-			window.twq( 'event', 'tw-' + cfg.pixel_id + '-' + ev.type, params );
+			var eventId = ( cfg.event_ids && cfg.event_ids[ ev.type ] ) || 'tw-' + cfg.pixel_id + '-' + ev.type;
+			window.twq( 'event', eventId, params );
 		}
 	};
 
@@ -297,6 +343,49 @@
 		}
 	} );
 
+	function postEvent( body, retry ) {
+		try {
+			fetch( data.restUrl, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': data.nonce },
+				body: body,
+				keepalive: true
+			} ).then( function ( res ) {
+				if ( res.status !== 403 || ! retry ) {
+					return;
+				}
+				// Cached pages carry a stale nonce: fetch a fresh one and retry once.
+				fetch( data.restUrl.replace( /\/event$/, '/nonce' ), { cache: 'no-store' } )
+					.then( function ( r ) { return r.json(); } )
+					.then( function ( json ) {
+						if ( json && json.nonce ) {
+							data.nonce = json.nonce;
+							postEvent( body, false );
+						}
+					} );
+			} ).catch( function () {} );
+		} catch ( e ) {}
+	}
+
+	// Same rules as the server: the destination's event list, then consent.
+	function permitted( id, type ) {
+		var rule = ( data.rules || {} )[ id ];
+		if ( rule && rule.events && rule.events.indexOf( type ) === -1 ) {
+			return false;
+		}
+		var gate = data.gate;
+		if ( ! gate ) {
+			return true;
+		}
+		if ( gate.dnt && ( navigator.doNotTrack === '1' || window.doNotTrack === '1' ) ) {
+			return false;
+		}
+		if ( rule && rule.category === 'advertising' ) {
+			return typeof window.wp_has_consent === 'function' ? !! window.wp_has_consent( 'marketing' ) : gate.ads;
+		}
+		return typeof window.wp_has_consent === 'function' ? !! window.wp_has_consent( 'statistics' ) : gate.analytics;
+	}
+
 	// Public API for custom + client-origin events.
 	window.wpch = window.wpch || {};
 	window.wpch.track = function ( type, params ) {
@@ -308,17 +397,12 @@
 			currency: params.currency || null,
 			items: params.items || []
 		};
-		fire( ev, params.destinations );
+		fire( ev, ( params.destinations || Object.keys( dest ) ).filter( function ( id ) {
+			return permitted( id, type );
+		} ) );
 
 		if ( data.restUrl && params.server !== false ) {
-			try {
-				fetch( data.restUrl, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': data.nonce },
-					body: JSON.stringify( { type: type, value: ev.value, meta: params.meta || {}, url: location.href } ),
-					keepalive: true
-				} );
-			} catch ( e ) {}
+			postEvent( JSON.stringify( { type: type, value: ev.value, meta: params.meta || {}, url: location.href } ), true );
 		}
 	};
 

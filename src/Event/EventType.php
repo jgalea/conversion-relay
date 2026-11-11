@@ -17,6 +17,7 @@ final class EventType {
 	public const DONATION        = 'donation';
 	public const BOOKING         = 'booking';
 	public const ENROLL          = 'enroll';
+	public const COMPLETION      = 'completion';
 	public const SEARCH          = 'search';
 	public const PAGE_VIEW       = 'page_view';
 	public const VIEW_ITEM       = 'view_item';
@@ -42,6 +43,7 @@ final class EventType {
 			self::DONATION,
 			self::BOOKING,
 			self::ENROLL,
+			self::COMPLETION,
 			self::SEARCH,
 			self::PAGE_VIEW,
 			self::VIEW_ITEM,

@@ -97,7 +97,7 @@ final class MetaAds extends AbstractDestination {
 					'action_source'    => 'website',
 					'event_source_url' => $event->url,
 					'user_data'        => $user_data,
-					'custom_data'      => $this->present_values(
+					'custom_data'      => (object) $this->present_values(
 						array(
 							'value'    => $event->value,
 							'currency' => $event->currency,

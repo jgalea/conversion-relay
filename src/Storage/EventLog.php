@@ -48,7 +48,38 @@ final class EventLog {
 			)
 		);
 
-		return (bool) $inserted;
+		// ON DUPLICATE KEY reports 2 when it updated an existing row. Only a fresh
+		// insert may queue a delivery, or a re-fired hook queues a second one while
+		// the first is still pending or backing off.
+		return 1 === (int) $inserted;
+	}
+
+	public static function attempts( string $event_id, string $destination ): int {
+		global $wpdb;
+		$table = Schema::table();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				'SELECT attempts FROM %i WHERE event_id = %s AND destination = %s',
+				$table,
+				$event_id,
+				$destination
+			)
+		);
+	}
+
+	public static function unsent_count( string $event_id ): int {
+		global $wpdb;
+		$table = Schema::table();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				'SELECT COUNT(*) FROM %i WHERE event_id = %s AND status <> %s',
+				$table,
+				$event_id,
+				self::STATUS_SENT
+			)
+		);
 	}
 
 	public static function already_sent( string $event_id, string $destination ): bool {
@@ -121,6 +152,96 @@ final class EventLog {
 		}
 
 		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
+	 * A filtered page of the log, newest first.
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	public static function page( string $status, string $destination, int $per_page, int $offset ): array {
+		global $wpdb;
+		$table = Schema::table();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT * FROM %i WHERE (%s = \'\' OR status = %s) AND (%s = \'\' OR destination = %s) ORDER BY id DESC LIMIT %d OFFSET %d',
+				$table,
+				$status,
+				$status,
+				$destination,
+				$destination,
+				$per_page,
+				$offset
+			),
+			ARRAY_A
+		);
+		return is_array( $rows ) ? $rows : array();
+	}
+
+	public static function count( string $status, string $destination ): int {
+		global $wpdb;
+		$table = Schema::table();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				'SELECT COUNT(*) FROM %i WHERE (%s = \'\' OR status = %s) AND (%s = \'\' OR destination = %s)',
+				$table,
+				$status,
+				$status,
+				$destination,
+				$destination
+			)
+		);
+	}
+
+	/**
+	 * Rows that are not coming back on their own: dead-lettered ones, and failed
+	 * ones that have outlived the longest retry backoff without being re-queued.
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	public static function stuck( int $id = 0 ): array {
+		global $wpdb;
+		$table  = Schema::table();
+		$cutoff = gmdate( 'Y-m-d H:i:s', time() - HOUR_IN_SECONDS );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT * FROM %i WHERE (%d = 0 OR id = %d) AND (status = %s OR (status = %s AND updated_at < %s)) ORDER BY id ASC LIMIT 500',
+				$table,
+				$id,
+				$id,
+				self::STATUS_DEAD,
+				self::STATUS_FAILED,
+				$cutoff
+			),
+			ARRAY_A
+		);
+		return is_array( $rows ) ? $rows : array();
+	}
+
+	public static function reset_for_retry( string $event_id, string $destination ): void {
+		global $wpdb;
+		$table = Schema::table();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->query(
+			$wpdb->prepare(
+				'UPDATE %i SET status = %s, attempts = 0, updated_at = %s WHERE event_id = %s AND destination = %s',
+				$table,
+				self::STATUS_PENDING,
+				current_time( 'mysql', true ),
+				$event_id,
+				$destination
+			)
+		);
+	}
+
+	public static function clear(): void {
+		global $wpdb;
+		$table = Schema::table();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->query( $wpdb->prepare( 'DELETE FROM %i', $table ) );
 	}
 
 	public static function prune( int $keep_days = 30 ): void {

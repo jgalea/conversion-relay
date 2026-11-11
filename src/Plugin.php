@@ -33,6 +33,7 @@ final class Plugin {
 
 	public function boot(): void {
 		Schema::maybe_upgrade();
+		Settings::migrate_google_ads_events();
 
 		$this->register_builtins();
 
@@ -48,6 +49,8 @@ final class Plugin {
 		if ( defined( 'WPCH_FILE' ) ) {
 			add_filter( 'wp_consent_api_registered_' . plugin_basename( WPCH_FILE ), '__return_true' );
 		}
+
+		Support\Privacy::hooks();
 
 		( new Frontend( $this->registry, $this->dispatcher ) )->hooks();
 

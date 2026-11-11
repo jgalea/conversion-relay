@@ -37,7 +37,7 @@ final class PaidMembershipsPro extends AbstractSource {
 		$this->emit(
 			array(
 				'type'      => EventType::SUBSCRIBE,
-				'entity_id' => is_object( $morder ) && isset( $morder->id ) ? (string) $morder->id : (string) $user_id,
+				'entity_id' => is_object( $morder ) && isset( $morder->id ) ? (string) $morder->id : '',
 				'value'     => is_object( $morder ) && isset( $morder->total ) ? (float) $morder->total : null,
 				'currency'  => function_exists( 'pmpro_get_currency' ) ? pmpro_get_currency() : null,
 			)

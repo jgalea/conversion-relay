@@ -61,6 +61,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	add_action(
 		'cli_init',
 		static function (): void {
+			\WP_CLI::add_command( 'conversion-relay', Cli\Commands::class );
 			\WP_CLI::add_command( 'conversion-hub', Cli\Commands::class );
 		}
 	);

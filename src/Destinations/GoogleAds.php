@@ -34,18 +34,30 @@ final class GoogleAds extends AbstractDestination {
 	}
 
 	public function settings_fields(): array {
-		return array(
+		$fields = array(
 			'conversion_id'    => array(
 				'label'  => __( 'Conversion ID (AW-XXXXXXXXX)', 'conversion-relay' ),
 				'type'   => 'text',
 				'secret' => false,
 			),
 			'conversion_label' => array(
-				'label'  => __( 'Conversion label', 'conversion-relay' ),
+				'label'  => __( 'Purchase conversion label', 'conversion-relay' ),
 				'type'   => 'text',
 				'secret' => false,
 			),
 		);
+
+		foreach ( self::conversion_types() as $type => $label ) {
+			$fields[ 'label_' . $type ] = array(
+				/* translators: %s: event name, e.g. "Form submission". */
+				'label'  => sprintf( __( '%s conversion label', 'conversion-relay' ), $label ),
+				'type'   => 'text',
+				'secret' => false,
+				'help'   => __( 'Tick the event under "Send these events" for it to count as a conversion.', 'conversion-relay' ),
+			);
+		}
+
+		return $fields;
 	}
 
 	protected function required_keys(): array {
@@ -56,6 +68,7 @@ final class GoogleAds extends AbstractDestination {
 		return array(
 			'conversion_id'    => $this->get( 'conversion_id' ),
 			'conversion_label' => $this->get( 'conversion_label' ),
+			'labels'           => $this->per_type_values( 'label_' ),
 		);
 	}
 }

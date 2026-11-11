@@ -43,12 +43,19 @@ final class DownloadMonitor extends AbstractSource {
 			? $download->get_title()
 			: '';
 
-		$this->emit(
+		$ip  = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+		$key = wp_hash( $entity_id . '|' . $ip );
+
+		$this->emit_public(
 			array(
 				'type'      => EventType::FILE_DOWNLOAD,
-				'entity_id' => $entity_id,
-				'meta'      => array( 'title' => $title ),
-			)
+				'entity_id' => $key,
+				'meta'      => array(
+					'download_id' => $entity_id,
+					'title'       => $title,
+				),
+			),
+			$key
 		);
 	}
 }

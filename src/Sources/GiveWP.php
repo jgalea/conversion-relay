@@ -55,6 +55,7 @@ final class GiveWP extends AbstractSource {
 		$this->emit(
 			array(
 				'type'      => EventType::DONATION,
+				'identity'  => array(),
 				'entity_id' => (string) $payment_id,
 				'value'     => $value,
 				'currency'  => $currency,

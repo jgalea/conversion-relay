@@ -43,7 +43,7 @@ final class ContactForm7 extends AbstractSource {
 		$this->emit(
 			array(
 				'type'      => EventType::FORM_SUBMISSION,
-				'entity_id' => $entity_id,
+				'entity_id' => '',
 				'meta'      => array(
 					'form_id'    => $entity_id,
 					'form_title' => is_string( $title ) ? $title : '',

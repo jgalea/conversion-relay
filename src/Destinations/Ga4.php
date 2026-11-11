@@ -15,6 +15,7 @@ use WPConversionHub\Event\NormalizedEvent;
 final class Ga4 extends AbstractDestination {
 
 	private const MP_ENDPOINT = 'https://www.google-analytics.com/mp/collect';
+	private const MP_DEBUG    = 'https://www.google-analytics.com/debug/mp/collect';
 
 	public function id(): string {
 		return 'ga4';
@@ -82,7 +83,7 @@ final class Ga4 extends AbstractDestination {
 				'measurement_id' => $this->get( 'measurement_id' ),
 				'api_secret'     => $api_secret,
 			),
-			self::MP_ENDPOINT
+			empty( $event->meta['wpch_debug'] ) ? self::MP_ENDPOINT : self::MP_DEBUG
 		);
 
 		$body = array(
@@ -96,6 +97,15 @@ final class Ga4 extends AbstractDestination {
 				),
 			),
 		);
+
+		if ( null !== $event->consent ) {
+			$granted                      = ! empty( $event->consent['marketing'] ) ? 'GRANTED' : 'DENIED';
+			$body['non_personalized_ads'] = 'GRANTED' !== $granted;
+			$body['consent']              = array(
+				'ad_user_data'       => $granted,
+				'ad_personalization' => $granted,
+			);
+		}
 
 		return $this->post_json( $url, $body );
 	}
@@ -132,6 +142,10 @@ final class Ga4 extends AbstractDestination {
 		}
 		if ( EventType::PURCHASE === $event->type && '' !== $event->entity_id ) {
 			$params['transaction_id'] = $event->entity_id;
+		}
+		if ( ! empty( $event->identity['session_id'] ) ) {
+			$params['session_id']     = (string) $event->identity['session_id'];
+			$params['session_number'] = (int) ( $event->identity['session_number'] ?? 1 );
 		}
 		if ( ! empty( $event->items ) ) {
 			$params['items'] = $event->items;

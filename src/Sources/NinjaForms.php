@@ -40,7 +40,7 @@ final class NinjaForms extends AbstractSource {
 		$this->emit(
 			array(
 				'type'      => EventType::FORM_SUBMISSION,
-				'entity_id' => isset( $form_data['form_id'] ) ? (string) $form_data['form_id'] : '',
+				'entity_id' => '',
 				'meta'      => array(
 					'form_id' => $form_data['form_id'] ?? '',
 				),

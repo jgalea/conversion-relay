@@ -50,6 +50,15 @@ final class ClientQueue {
 	}
 
 	/**
+	 * Whether this visitor has events waiting, which makes the next full page
+	 * view specific to them and unsafe for a page cache to store.
+	 */
+	public static function has_pending(): bool {
+		$key = self::key();
+		return '' !== $key && ! empty( get_transient( self::transient( $key ) ) );
+	}
+
+	/**
 	 * Return everything queued for this visitor (persisted + this request) and clear it.
 	 *
 	 * @return array<int,array<string,mixed>>

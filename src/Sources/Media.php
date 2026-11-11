@@ -17,7 +17,7 @@ final class Media extends AbstractSource {
 	}
 
 	public function label(): string {
-		return 'Media (video and audio)';
+		return __( 'Media (video and audio)', 'conversion-relay' );
 	}
 
 	public function is_available(): bool {

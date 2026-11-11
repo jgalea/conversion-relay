@@ -43,6 +43,7 @@ final class WPSimplePay extends AbstractSource {
 		$this->emit(
 			array(
 				'type'      => EventType::PURCHASE,
+				'identity'  => array(),
 				'entity_id' => null !== $payment && isset( $payment->id ) ? (string) $payment->id : '',
 				'value'     => null !== $payment && isset( $payment->amount ) ? ( (float) $payment->amount ) / 100 : null,
 				'currency'  => null !== $payment && isset( $payment->currency ) ? strtoupper( (string) $payment->currency ) : null,

@@ -21,10 +21,34 @@ use WPConversionHub\Support\Settings;
  */
 final class Consent {
 
+	/**
+	 * The visitor's choices as seen in their own request, for storing with an
+	 * order or submission that is delivered later by a webhook or an admin.
+	 *
+	 * @return array<string,bool>
+	 */
+	public static function snapshot(): array {
+		$settings   = Settings::consent();
+		$marketing  = self::visitor_consent( DestinationInterface::CONSENT_ADS );
+		$statistics = self::visitor_consent( DestinationInterface::CONSENT_ANALYTICS );
+
+		return array(
+			'marketing'  => $marketing ?? ( 'granted' === ( $settings['ads_default'] ?? 'denied' ) ),
+			'statistics' => $statistics ?? ( 'granted' === ( $settings['analytics_default'] ?? 'granted' ) ),
+			'dnt'        => self::dnt_enabled(),
+		);
+	}
+
 	public static function allows( DestinationInterface $destination, NormalizedEvent $event ): bool {
 		$settings = Settings::consent();
 
-		if ( ! empty( $settings['respect_dnt'] ) && self::dnt_enabled() ) {
+		// An event with no stored decision that was not raised in the visitor's own
+		// request (a gateway webhook, an admin marking an order complete) has no
+		// cookie or header worth reading: they would belong to whoever triggered it.
+		$deferred = null === $event->consent && $event->identity_resolved;
+		$dnt      = null !== $event->consent ? ! empty( $event->consent['dnt'] ) : ( ! $deferred && self::dnt_enabled() );
+
+		if ( ! empty( $settings['respect_dnt'] ) && $dnt ) {
 			return (bool) apply_filters( 'wpch_consent', false, $destination->consent_category(), $event, 'dnt' );
 		}
 
@@ -40,10 +64,18 @@ final class Consent {
 		$granted = 'granted' === $default;
 		$reason  = 'default';
 
-		$visitor = self::visitor_consent( $category );
-		if ( null !== $visitor ) {
-			$granted = $visitor;
-			$reason  = 'consent_api';
+		if ( null !== $event->consent ) {
+			$granted = ! empty( $event->consent[ DestinationInterface::CONSENT_ADS === $category ? 'marketing' : 'statistics' ] );
+			$reason  = 'stored';
+		} elseif ( $deferred ) {
+			$granted = DestinationInterface::CONSENT_ADS !== $category && $granted;
+			$reason  = 'deferred';
+		} else {
+			$visitor = self::visitor_consent( $category );
+			if ( null !== $visitor ) {
+				$granted = $visitor;
+				$reason  = 'consent_api';
+			}
 		}
 
 		return (bool) apply_filters( 'wpch_consent', $granted, $category, $event, $reason );

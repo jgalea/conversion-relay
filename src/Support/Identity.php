@@ -21,6 +21,12 @@ final class Identity {
 			$identity['client_id'] = $ga_client_id;
 		}
 
+		$session = self::ga_session();
+		if ( array() !== $session ) {
+			$identity['session_id']     = $session['id'];
+			$identity['session_number'] = $session['number'];
+		}
+
 		foreach ( array(
 			'_fbp' => 'fbp',
 			'_fbc' => 'fbc',
@@ -55,6 +61,29 @@ final class Identity {
 			return $parts[2] . '.' . $parts[3];
 		}
 		return '';
+	}
+
+	/**
+	 * Session id and number from the _ga_<container> cookie, in either the GS1
+	 * (GS1.1.<id>.<n>...) or GS2 (GS2.1.s<id>$o<n>...) layout.
+	 *
+	 * @return array{id:string,number:string}|array{}
+	 */
+	private static function ga_session(): array {
+		$measurement_id = (string) ( Settings::dest_config( 'ga4' )['measurement_id'] ?? '' );
+		$suffix         = (string) preg_replace( '/^G-/', '', $measurement_id );
+		if ( '' === $suffix ) {
+			return array();
+		}
+
+		$value = self::cookie( '_ga_' . $suffix );
+		if ( preg_match( '/^GS1\.\d+\.(\d+)\.(\d+)/', $value, $m ) || preg_match( '/^GS2\.\d+\.s(\d+)\$o(\d+)/', $value, $m ) ) {
+			return array(
+				'id'     => $m[1],
+				'number' => $m[2],
+			);
+		}
+		return array();
 	}
 
 	private static function click_id( string $param ): string {

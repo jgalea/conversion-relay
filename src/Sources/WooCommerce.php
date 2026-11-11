@@ -9,6 +9,8 @@ use WPConversionHub\Event\EventType;
 // Emits WooCommerce conversion events from CRUD-safe order and cart hooks.
 final class WooCommerce extends AbstractSource {
 
+	private const VISITOR_META = '_wpch_visitor';
+
 	public function id(): string {
 		return 'woocommerce';
 	}
@@ -26,11 +28,54 @@ final class WooCommerce extends AbstractSource {
 	}
 
 	protected function hooks(): void {
+		add_action( 'woocommerce_checkout_order_processed', array( $this, 'store_visitor' ) );
+		add_action( 'woocommerce_store_api_checkout_order_processed', array( $this, 'store_visitor' ) );
 		add_action( 'woocommerce_payment_complete', array( $this, 'on_payment_complete' ) );
 		add_action( 'woocommerce_order_status_completed', array( $this, 'on_paid' ) );
 		add_action( 'woocommerce_add_to_cart', array( $this, 'on_add_to_cart' ), 10, 6 );
 		add_action( 'template_redirect', array( $this, 'maybe_begin_checkout' ) );
 		add_action( 'woocommerce_order_refunded', array( $this, 'on_refund' ), 10, 2 );
+	}
+
+	/**
+	 * Keep the buyer's identity and consent with the order. A purchase is often
+	 * reported by a gateway webhook or an admin marking the order complete, and
+	 * neither request carries the buyer's cookies, IP or browser.
+	 *
+	 * @param mixed $order_or_id
+	 */
+	public function store_visitor( $order_or_id ): void {
+		$order = is_object( $order_or_id ) ? $order_or_id : ( function_exists( 'wc_get_order' ) ? wc_get_order( $order_or_id ) : null );
+		if ( ! $order ) {
+			return;
+		}
+		$order->update_meta_data( self::VISITOR_META, $this->visitor_snapshot() );
+		$order->save_meta_data();
+	}
+
+	/**
+	 * The snapshot saved on the order, or on the initial order of the subscription
+	 * a renewal belongs to, since a renewal is paid with no visitor present.
+	 *
+	 * @param object $order
+	 * @return mixed
+	 */
+	private function visitor_meta( $order ) {
+		$stored = $order->get_meta( self::VISITOR_META );
+		if ( '' !== $stored && false !== $stored ) {
+			return $stored;
+		}
+
+		if ( function_exists( 'wcs_get_subscriptions_for_order' ) ) {
+			foreach ( wcs_get_subscriptions_for_order( $order, array( 'order_type' => 'any' ) ) as $subscription ) {
+				$parent = method_exists( $subscription, 'get_parent' ) ? $subscription->get_parent() : null;
+				if ( is_object( $parent ) && '' !== $parent->get_meta( self::VISITOR_META ) ) {
+					return $parent->get_meta( self::VISITOR_META );
+				}
+			}
+		}
+
+		return '';
 	}
 
 	public function on_payment_complete( int $order_id ): void {
@@ -50,10 +95,14 @@ final class WooCommerce extends AbstractSource {
 		$price   = is_object( $product ) && method_exists( $product, 'get_price' ) ? (float) $product->get_price() : null;
 		$name    = is_object( $product ) && method_exists( $product, 'get_name' ) ? (string) $product->get_name() : '';
 
-		$this->emit(
+		$ip  = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+		$key = wp_hash( $cart_item_key . '|' . $quantity . '|' . $ip );
+
+		$this->emit_public(
 			array(
 				'type'      => EventType::ADD_TO_CART,
-				'entity_id' => (string) $product_id,
+				'entity_id' => $key,
+				'meta'      => array( 'product_id' => $product_id ),
 				'value'     => null === $price ? null : $price * $quantity,
 				'currency'  => function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : null,
 				'items'     => array(
@@ -64,7 +113,8 @@ final class WooCommerce extends AbstractSource {
 						'price'     => $price,
 					),
 				),
-			)
+			),
+			$key
 		);
 	}
 
@@ -79,29 +129,40 @@ final class WooCommerce extends AbstractSource {
 		$cart  = function_exists( 'WC' ) && WC() ? WC()->cart : null;
 		$value = $cart ? (float) $cart->get_total( 'edit' ) : null;
 
-		$this->emit(
+		$ip  = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+		$key = wp_hash( ( $cart ? $cart->get_cart_hash() : '' ) . '|' . $ip );
+
+		$this->emit_public(
 			array(
 				'type'      => EventType::BEGIN_CHECKOUT,
-				'entity_id' => '',
+				'entity_id' => $key,
 				'value'     => $value,
 				'currency'  => function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : null,
-			)
+			),
+			$key
 		);
 	}
 
 	public function on_refund( int $order_id, int $refund_id ): void {
-		$order = function_exists( 'wc_get_order' ) ? wc_get_order( $order_id ) : null;
-		if ( ! $order ) {
+		$order  = function_exists( 'wc_get_order' ) ? wc_get_order( $order_id ) : null;
+		$refund = function_exists( 'wc_get_order' ) ? wc_get_order( $refund_id ) : null;
+		if ( ! $order || ! $refund ) {
 			return;
 		}
 
 		$this->emit(
-			array(
-				'type'      => EventType::REFUND,
-				'entity_id' => (string) $order_id . '-r',
-				'value'     => (float) $order->get_total_refunded(),
-				'currency'  => $order->get_currency(),
-				'meta'      => array( 'refund_id' => $refund_id ),
+			array_merge(
+				array(
+					'type'      => EventType::REFUND,
+					'entity_id' => (string) $refund_id,
+					'value'     => (float) $refund->get_amount(),
+					'currency'  => $order->get_currency(),
+					'meta'      => array(
+						'refund_id' => $refund_id,
+						'order_id'  => $order_id,
+					),
+				),
+				$this->stored_visitor( $this->visitor_meta( $order ) )
 			)
 		);
 	}
@@ -120,20 +181,23 @@ final class WooCommerce extends AbstractSource {
 		}
 
 		$this->emit(
-			array(
-				'type'      => EventType::PURCHASE,
-				'entity_id' => (string) $order->get_id(),
-				'value'     => (float) $order->get_total(),
-				'currency'  => $order->get_currency(),
-				'items'     => $this->order_items( $order ),
-				'user_data' => $this->available_values(
-					array(
-						'email'      => $order->get_billing_email(),
-						'phone'      => $order->get_billing_phone(),
-						'first_name' => $order->get_billing_first_name(),
-						'last_name'  => $order->get_billing_last_name(),
-					)
+			array_merge(
+				array(
+					'type'      => EventType::PURCHASE,
+					'entity_id' => (string) $order->get_id(),
+					'value'     => (float) $order->get_total(),
+					'currency'  => $order->get_currency(),
+					'items'     => $this->order_items( $order ),
+					'user_data' => $this->available_values(
+						array(
+							'email'      => $order->get_billing_email(),
+							'phone'      => $order->get_billing_phone(),
+							'first_name' => $order->get_billing_first_name(),
+							'last_name'  => $order->get_billing_last_name(),
+						)
+					),
 				),
+				$this->stored_visitor( $this->visitor_meta( $order ) )
 			)
 		);
 	}

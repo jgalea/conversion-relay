@@ -6,7 +6,7 @@ namespace WPConversionHub\Sources;
 
 use WPConversionHub\Event\EventType;
 
-// Emits LearnDash course and lesson completion events.
+// Emits LearnDash enrolment and course and lesson completion events.
 final class LearnDash extends AbstractSource {
 
 	public function id(): string {
@@ -22,12 +22,37 @@ final class LearnDash extends AbstractSource {
 	}
 
 	public function supported_events(): array {
-		return array( EventType::ENROLL );
+		return array( EventType::ENROLL, EventType::COMPLETION );
 	}
 
 	protected function hooks(): void {
+		add_action( 'learndash_update_course_access', array( $this, 'on_access' ), 10, 4 );
 		add_action( 'learndash_course_completed', array( $this, 'on_course' ) );
 		add_action( 'learndash_lesson_completed', array( $this, 'on_lesson' ) );
+	}
+
+	/**
+	 * @param mixed $user_id
+	 * @param mixed $course_id
+	 * @param mixed $access_list
+	 * @param mixed $remove
+	 */
+	public function on_access( $user_id, $course_id, $access_list = null, $remove = false ): void {
+		if ( $remove ) {
+			return;
+		}
+
+		$this->emit(
+			array(
+				'type'      => EventType::ENROLL,
+				'entity_id' => '',
+				'meta'      => array(
+					'object'    => 'course',
+					'course_id' => $this->id_from_value( $course_id ),
+					'user_id'   => $this->id_from_value( $user_id ),
+				),
+			)
+		);
 	}
 
 	/**
@@ -40,11 +65,12 @@ final class LearnDash extends AbstractSource {
 
 		$this->emit(
 			array(
-				'type'      => EventType::ENROLL,
-				'entity_id' => $this->id_from_value( $data['course'] ?? '' ),
+				'type'      => EventType::COMPLETION,
+				'entity_id' => '',
 				'meta'      => array(
-					'object'  => 'course',
-					'user_id' => $this->id_from_value( $data['user'] ?? '' ),
+					'object'    => 'course',
+					'course_id' => $this->id_from_value( $data['course'] ?? '' ),
+					'user_id'   => $this->id_from_value( $data['user'] ?? '' ),
 				),
 			)
 		);
@@ -60,11 +86,12 @@ final class LearnDash extends AbstractSource {
 
 		$this->emit(
 			array(
-				'type'      => EventType::ENROLL,
-				'entity_id' => $this->id_from_value( $data['lesson'] ?? '' ),
+				'type'      => EventType::COMPLETION,
+				'entity_id' => '',
 				'meta'      => array(
-					'object'  => 'lesson',
-					'user_id' => $this->id_from_value( $data['user'] ?? '' ),
+					'object'    => 'lesson',
+					'lesson_id' => $this->id_from_value( $data['lesson'] ?? '' ),
+					'user_id'   => $this->id_from_value( $data['user'] ?? '' ),
 				),
 			)
 		);
