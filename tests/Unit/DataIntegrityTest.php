@@ -9,7 +9,10 @@ use WPConversionHub\Hub\ClientQueue;
 use WPConversionHub\Sources\ContactForm7;
 use WPConversionHub\Sources\Core;
 use WPConversionHub\Sources\DownloadMonitor;
+use WPConversionHub\Sources\GiveWP;
+use WPConversionHub\Sources\MemberPress;
 use WPConversionHub\Sources\WooCommerce;
+use WPConversionHub\Sources\WPSimplePay;
 use WPConversionHub\Storage\EventLog;
 
 final class DataIntegrityTest extends TestCase {
@@ -301,6 +304,31 @@ final class DataIntegrityTest extends TestCase {
 			$woo->on_add_to_cart( 'k' . $n, 5, 1, 0, null, null );
 		}
 		$this->assertLessThanOrEqual( 5, count( $this->events ), 'add-to-cart floods share the budget' );
+	}
+
+	public function testWebhookAndAdminFiredMoneySourcesTakeTheNoDecisionPath(): void {
+		$this->configure( $this->metaServer() );
+		$_COOKIE                    = array( '_fbp' => 'fb.1.admin' );
+		$_SERVER['HTTP_USER_AGENT'] = 'StripeWebhook';
+
+		$simple = new WPSimplePay();
+		$simple->register( $this->dispatcher );
+		$simple->on_paid( (object) array( 'data' => (object) array( 'object' => (object) array( 'id' => 'pi_1', 'amount' => 1000, 'currency' => 'eur' ) ) ), null );
+
+		$member = new MemberPress();
+		$member->register( $this->dispatcher );
+		$member->on_complete( (object) array( 'id' => 7, 'amount' => 10, 'user_email' => 'a@example.com' ) );
+
+		$give = new GiveWP();
+		$give->register( $this->dispatcher );
+		$give->on_complete( 31 );
+
+		$this->assertCount( 3, $this->events );
+		foreach ( $this->events as $event ) {
+			$this->assertSame( array(), $event->identity, $event->source . ' must not read the triggering request' );
+			$this->assertNull( $event->consent );
+		}
+		$this->assertSame( array(), $this->queued(), 'ads are denied when there is no stored decision' );
 	}
 
 	public function testStatusFiltersAndRetryOnlyTouchRowsThatAreNotWaiting(): void {

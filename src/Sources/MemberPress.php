@@ -55,6 +55,7 @@ final class MemberPress extends AbstractSource {
 		$this->emit(
 			array(
 				'type'      => EventType::SUBSCRIBE,
+				'identity'  => array(),
 				'entity_id' => isset( $txn->id ) ? (string) $txn->id : '',
 				'value'     => isset( $txn->amount ) ? (float) $txn->amount : null,
 				'currency'  => function_exists( 'mepr_get_currency' ) ? mepr_get_currency() : null,
