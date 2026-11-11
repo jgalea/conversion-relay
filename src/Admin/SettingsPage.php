@@ -36,6 +36,7 @@ final class SettingsPage {
 		add_action( 'admin_post_wpch_status', array( $this, 'status_action' ) );
 		add_action( 'admin_post_wpch_dismiss', array( $this, 'dismiss_notice' ) );
 		add_action( 'admin_notices', array( $this, 'inactive_notice' ) );
+		add_action( 'admin_notices', array( $this, 'event_lists_notice' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue' ) );
 	}
 
@@ -50,9 +51,29 @@ final class SettingsPage {
 		if ( ! current_user_can( self::CAP ) || ! check_admin_referer( 'wpch_dismiss' ) ) {
 			wp_die( esc_html__( 'Unauthorized', 'conversion-relay' ), '', array( 'response' => 403 ) );
 		}
-		update_user_meta( get_current_user_id(), self::DISMISSED_META, 1 );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- check_admin_referer above.
+		if ( isset( $_GET['notice'] ) && 'lists' === sanitize_key( wp_unslash( $_GET['notice'] ) ) ) {
+			delete_option( Settings::NOTICE_OPTION );
+		} else {
+			update_user_meta( get_current_user_id(), self::DISMISSED_META, 1 );
+		}
 		wp_safe_redirect( wp_get_referer() ? wp_get_referer() : admin_url() );
 		exit;
+	}
+
+	public function event_lists_notice(): void {
+		if ( ! current_user_can( self::CAP ) || ! get_option( Settings::NOTICE_OPTION ) ) {
+			return;
+		}
+
+		printf(
+			'<div class="notice notice-info"><p>%s <a href="%s">%s</a> &nbsp; <a href="%s">%s</a></p></div>',
+			esc_html__( 'Conversion Relay now has a list of events for each destination. Your Google Ads conversion label was copied to the form, subscription, registration and donation events, so those keep counting as before. Review the lists under Send these events.', 'conversion-relay' ),
+			esc_url( admin_url( 'options-general.php?page=' . self::SLUG ) ),
+			esc_html__( 'Open settings', 'conversion-relay' ),
+			esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=wpch_dismiss&notice=lists' ), 'wpch_dismiss' ) ),
+			esc_html__( 'Dismiss', 'conversion-relay' )
+		);
 	}
 
 	/**

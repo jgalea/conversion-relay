@@ -33,6 +33,7 @@ final class Plugin {
 
 	public function boot(): void {
 		Schema::maybe_upgrade();
+		Settings::migrate_google_ads_events();
 
 		$this->register_builtins();
 

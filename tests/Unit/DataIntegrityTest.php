@@ -331,6 +331,26 @@ final class DataIntegrityTest extends TestCase {
 		$this->assertSame( array(), $this->queued(), 'ads are denied when there is no stored decision' );
 	}
 
+	public function testUpgradeKeepsLeadEventsOnTheExistingGoogleAdsLabel(): void {
+		$this->configure( array( 'google_ads' => array( 'enabled' => true, 'conversion_id' => 'AW-1', 'conversion_label' => 'lbl' ) ) );
+		\WPConversionHub\Support\Settings::migrate_google_ads_events();
+
+		$this->assertTrue( \WPConversionHub\Support\Settings::dest_accepts( 'google_ads', 'form_submission' ) );
+		$this->assertTrue( \WPConversionHub\Support\Settings::dest_accepts( 'google_ads', 'purchase' ) );
+		$this->assertFalse( \WPConversionHub\Support\Settings::dest_accepts( 'google_ads', 'add_to_cart' ) );
+		$this->assertSame( 'lbl', \WPConversionHub\Support\Settings::dest_config( 'google_ads' )['label_form_submission'] );
+		$this->assertNotFalse( get_option( 'wpch_notice_event_lists' ) );
+	}
+
+	public function testNewInstallsKeepPurchaseOnlyAndSeeNoNotice(): void {
+		\WPConversionHub\Support\Settings::migrate_google_ads_events();
+		$this->configure( array( 'google_ads' => array( 'enabled' => true, 'conversion_id' => 'AW-1', 'conversion_label' => 'lbl' ) ) );
+		\WPConversionHub\Support\Settings::migrate_google_ads_events();
+
+		$this->assertFalse( \WPConversionHub\Support\Settings::dest_accepts( 'google_ads', 'form_submission' ) );
+		$this->assertFalse( get_option( 'wpch_notice_event_lists' ) );
+	}
+
 	public function testStatusFiltersAndRetryOnlyTouchRowsThatAreNotWaiting(): void {
 		EventLog::record_pending( 'a', 'meta', 'purchase', 'woocommerce', '1', array( 'type' => 'purchase', 'source' => 'woocommerce' ) );
 		EventLog::record_pending( 'b', 'ga4', 'purchase', 'woocommerce', '2', array( 'type' => 'purchase', 'source' => 'woocommerce' ) );

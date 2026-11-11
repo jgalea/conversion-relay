@@ -8,6 +8,10 @@ final class Settings {
 
 	private const OPTION = 'wpch_settings';
 
+	public const NOTICE_OPTION = 'wpch_notice_event_lists';
+
+	private const MIGRATED_OPTION = 'wpch_ads_events_migrated';
+
 	private const DEFAULT_EVENTS = array(
 		'google_ads' => array( 'purchase' ),
 		'meta'       => array( 'purchase', 'add_to_cart', 'begin_checkout', 'view_item', 'search', 'register', 'subscribe', 'form_submission', 'donation' ),
@@ -74,6 +78,37 @@ final class Settings {
 			$events = self::DEFAULT_EVENTS[ $id ] ?? null;
 		}
 		return null === $events || in_array( $type, $events, true );
+	}
+
+	/**
+	 * Google Ads used to send every event to one label. On an upgrade, a site with
+	 * that label keeps its lead events going to it, in the new per-event slots, and
+	 * gets a one-time notice about the lists.
+	 */
+	public static function migrate_google_ads_events(): void {
+		if ( false !== get_option( self::MIGRATED_OPTION ) ) {
+			return;
+		}
+		update_option( self::MIGRATED_OPTION, 1, false );
+
+		$all   = self::all();
+		$cfg   = self::dest_config( 'google_ads' );
+		$label = isset( $cfg['conversion_label'] ) && is_scalar( $cfg['conversion_label'] ) ? (string) $cfg['conversion_label'] : '';
+		if ( '' === $label || is_array( $cfg['events'] ?? null ) ) {
+			return;
+		}
+
+		$leads = array( 'form_submission', 'subscribe', 'register', 'donation' );
+		foreach ( $leads as $type ) {
+			if ( empty( $cfg[ 'label_' . $type ] ) ) {
+				$cfg[ 'label_' . $type ] = $label;
+			}
+		}
+		$cfg['events'] = array_merge( self::DEFAULT_EVENTS['google_ads'], $leads );
+
+		$all['destinations']['google_ads'] = $cfg;
+		self::save( $all );
+		update_option( self::NOTICE_OPTION, 1, false );
 	}
 
 	public static function dest_enabled( string $id ): bool {

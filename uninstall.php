@@ -17,6 +17,8 @@ foreach ( $wpch_sites as $wpch_site ) {
 
 	delete_option( 'wpch_settings' );
 	delete_option( 'wpch_db_version' );
+	delete_option( 'wpch_ads_events_migrated' );
+	delete_option( 'wpch_notice_event_lists' );
 
 	if ( function_exists( 'as_unschedule_all_actions' ) ) {
 		as_unschedule_all_actions( '', array(), 'wpch' );
