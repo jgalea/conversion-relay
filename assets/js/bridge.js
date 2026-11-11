@@ -307,10 +307,8 @@
 			var params = {};
 			if ( ev.value != null ) params.value = ev.value;
 			if ( ev.currency ) params.currency = ev.currency;
-			var eventId = cfg.event_ids && cfg.event_ids[ ev.type ];
-			if ( eventId ) {
-				window.twq( 'event', eventId, params );
-			}
+			var eventId = ( cfg.event_ids && cfg.event_ids[ ev.type ] ) || 'tw-' + cfg.pixel_id + '-' + ev.type;
+			window.twq( 'event', eventId, params );
 		}
 	};
 
