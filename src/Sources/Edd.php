@@ -9,6 +9,8 @@ use WPConversionHub\Event\EventType;
 // Emits Easy Digital Downloads purchase and checkout events.
 final class Edd extends AbstractSource {
 
+	private const VISITOR_META = '_wpch_visitor';
+
 	public function id(): string {
 		return 'edd';
 	}
@@ -26,6 +28,8 @@ final class Edd extends AbstractSource {
 	}
 
 	protected function hooks(): void {
+		add_action( 'edd_built_order', array( $this, 'store_visitor' ) );
+		add_action( 'edd_insert_payment', array( $this, 'store_visitor' ) );
 		add_action( 'edd_complete_purchase', array( $this, 'on_complete' ) );
 		// Catches recurring renewals, which reach a paid status without firing
 		// edd_complete_purchase. The deterministic event_id dedupes any overlap
@@ -33,6 +37,26 @@ final class Edd extends AbstractSource {
 		add_action( 'edd_update_payment_status', array( $this, 'on_status' ), 10, 3 );
 		add_action( 'template_redirect', array( $this, 'maybe_begin_checkout' ) );
 		add_action( 'edd_refund_order', array( $this, 'on_refund' ), 10, 2 );
+	}
+
+	/**
+	 * Keep the buyer's identity and consent with the order, so a payment
+	 * completed by a gateway webhook or an admin isn't attributed to them.
+	 */
+	public function store_visitor( int $order_id ): void {
+		if ( function_exists( 'edd_update_order_meta' ) ) {
+			edd_update_order_meta( $order_id, self::VISITOR_META, $this->visitor_snapshot() );
+		} else {
+			update_post_meta( $order_id, self::VISITOR_META, $this->visitor_snapshot() );
+		}
+	}
+
+	private function stored( int $order_id ): array {
+		$raw = function_exists( 'edd_get_order_meta' )
+			? edd_get_order_meta( $order_id, self::VISITOR_META, true )
+			: get_post_meta( $order_id, self::VISITOR_META, true );
+
+		return $this->stored_visitor( $raw );
 	}
 
 	public function on_complete( int $payment_id ): void {
@@ -52,31 +76,44 @@ final class Edd extends AbstractSource {
 	}
 
 	public function on_refund( int $order_id, int $refund_id = 0 ): void {
-		$amount = function_exists( 'edd_get_payment_amount' ) ? (float) edd_get_payment_amount( $order_id ) : null;
+		$refund = function_exists( 'edd_get_order' ) && $refund_id ? edd_get_order( $refund_id ) : null;
+		$amount = is_object( $refund ) && isset( $refund->total )
+			? abs( (float) $refund->total )
+			: ( function_exists( 'edd_get_payment_amount' ) ? (float) edd_get_payment_amount( $order_id ) : null );
+
 		$this->emit(
-			array(
-				'type'      => EventType::REFUND,
-				'entity_id' => (string) $order_id . '-r',
-				'value'     => $amount,
-				'currency'  => function_exists( 'edd_get_payment_currency_code' ) ? edd_get_payment_currency_code( $order_id ) : null,
-				'meta'      => array( 'refund_id' => $refund_id ),
+			array_merge(
+				array(
+					'type'      => EventType::REFUND,
+					'entity_id' => (string) ( $refund_id ?: $order_id . '-r' ),
+					'value'     => $amount,
+					'currency'  => function_exists( 'edd_get_payment_currency_code' ) ? edd_get_payment_currency_code( $order_id ) : null,
+					'meta'      => array(
+						'refund_id' => $refund_id,
+						'order_id'  => $order_id,
+					),
+				),
+				$this->stored( $order_id )
 			)
 		);
 	}
 
 	private function emit_purchase( int $payment_id ): void {
 		$this->emit(
-			array(
-				'type'      => EventType::PURCHASE,
-				'entity_id' => (string) $payment_id,
-				'value'     => function_exists( 'edd_get_payment_amount' ) ? (float) edd_get_payment_amount( $payment_id ) : null,
-				'currency'  => function_exists( 'edd_get_payment_currency_code' ) ? edd_get_payment_currency_code( $payment_id ) : null,
-				'items'     => $this->payment_items( $payment_id ),
-				'user_data' => $this->available_values(
-					array(
-						'email' => function_exists( 'edd_get_payment_user_email' ) ? edd_get_payment_user_email( $payment_id ) : '',
-					)
+			array_merge(
+				array(
+					'type'      => EventType::PURCHASE,
+					'entity_id' => (string) $payment_id,
+					'value'     => function_exists( 'edd_get_payment_amount' ) ? (float) edd_get_payment_amount( $payment_id ) : null,
+					'currency'  => function_exists( 'edd_get_payment_currency_code' ) ? edd_get_payment_currency_code( $payment_id ) : null,
+					'items'     => $this->payment_items( $payment_id ),
+					'user_data' => $this->available_values(
+						array(
+							'email' => function_exists( 'edd_get_payment_user_email' ) ? edd_get_payment_user_email( $payment_id ) : '',
+						)
+					),
 				),
+				$this->stored( $payment_id )
 			)
 		);
 	}
@@ -86,11 +123,15 @@ final class Edd extends AbstractSource {
 			return;
 		}
 
-		$this->emit(
+		$ip  = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+		$key = wp_hash( (string) wp_json_encode( function_exists( 'edd_get_cart_contents' ) ? edd_get_cart_contents() : array() ) . '|' . $ip );
+
+		$this->emit_public(
 			array(
 				'type'      => EventType::BEGIN_CHECKOUT,
-				'entity_id' => '',
-			)
+				'entity_id' => $key,
+			),
+			$key
 		);
 	}
 

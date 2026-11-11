@@ -38,15 +38,21 @@ final class Core extends AbstractSource {
 		if ( ! is_search() ) {
 			return;
 		}
-		$term = get_search_query();
+		$term = mb_substr( get_search_query(), 0, 100 );
 		if ( '' === $term ) {
 			return;
 		}
-		$this->emit(
+
+		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+		$id = wp_hash( $ip . '|' . $term . '|' . gmdate( 'YmdH' ) );
+
+		$this->emit_public(
 			array(
-				'type' => EventType::SEARCH,
-				'meta' => array( 'search_term' => $term ),
-			)
+				'type'      => EventType::SEARCH,
+				'entity_id' => $id,
+				'meta'      => array( 'search_term' => $term ),
+			),
+			$id
 		);
 	}
 
@@ -58,7 +64,8 @@ final class Core extends AbstractSource {
 		$this->emit(
 			array(
 				'type'      => EventType::LOGIN,
-				'entity_id' => $user instanceof \WP_User ? (string) $user->ID : $user_login,
+				'entity_id' => '',
+				'meta'      => array( 'user_id' => $user instanceof \WP_User ? $user->ID : 0 ),
 			)
 		);
 	}

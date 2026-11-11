@@ -7,6 +7,7 @@ namespace WPConversionHub\Hub;
 use WPConversionHub\Destinations\DestinationInterface;
 use WPConversionHub\Event\NormalizedEvent;
 use WPConversionHub\Storage\EventLog;
+use WPConversionHub\Storage\IdentityStore;
 use WPConversionHub\Support\Hashing;
 use WPConversionHub\Support\Identity;
 use WPConversionHub\Support\Registry;
@@ -31,8 +32,11 @@ final class Dispatcher {
 			return;
 		}
 
-		if ( empty( $event->identity ) ) {
+		if ( ! $event->identity_resolved ) {
 			$event->identity = Identity::capture();
+			if ( null === $event->consent ) {
+				$event->consent = Consent::snapshot();
+			}
 		}
 
 		$event = apply_filters( 'wpch_event', $event );
@@ -45,6 +49,10 @@ final class Dispatcher {
 
 		foreach ( $this->registry->destinations() as $destination ) {
 			if ( ! Settings::dest_enabled( $destination->id() ) || ! $destination->is_configured() ) {
+				continue;
+			}
+
+			if ( ! Settings::dest_accepts( $destination->id(), $event->type ) ) {
 				continue;
 			}
 
@@ -66,7 +74,10 @@ final class Dispatcher {
 			}
 		}
 
-		if ( ! empty( $client_dests ) ) {
+		// A client-origin event was fired by the browser that sent it. Queueing it
+		// for the next page view would fire the pixel a second time, with an id Meta
+		// can't match to the first.
+		if ( ! empty( $client_dests ) && 'client' !== $event->origin ) {
 			ClientQueue::add( $this->client_event( $event ), $client_dests );
 		}
 	}
@@ -87,6 +98,7 @@ final class Dispatcher {
 		);
 
 		if ( $recorded ) {
+			IdentityStore::put( $event->event_id, $event->identity );
 			Queue::enqueue( self::queue_payload( $event ), $destination->id() );
 		}
 	}
@@ -126,11 +138,11 @@ final class Dispatcher {
 		$payload = $event->to_array();
 
 		$payload['user_data'] = Settings::enhanced_conversions_enabled()
-			? Hashing::user_data( is_array( $event->user_data ) ? $event->user_data : array() )
+			? Hashing::user_data( $event->user_data )
 			: array();
 
-		// Destinations that need the user agent read it from the live request.
-		unset( $payload['identity']['user_agent'] );
+		// IP, user agent and click ids live in IdentityStore, keyed by event id.
+		$payload['identity'] = array();
 
 		return $payload;
 	}
@@ -149,7 +161,8 @@ final class Dispatcher {
 			return;
 		}
 
-		$event = NormalizedEvent::from_array( $event_data );
+		$event           = NormalizedEvent::from_array( $event_data );
+		$event->identity = IdentityStore::get( $event->event_id );
 
 		if ( EventLog::already_sent( $event->event_id, $destination ) ) {
 			return;
@@ -166,21 +179,12 @@ final class Dispatcher {
 			return;
 		}
 
-		$attempts = $this->attempt_count( $event->event_id, $destination ) + 1;
+		$attempts = EventLog::attempts( $event->event_id, $destination ) + 1;
 		EventLog::mark_failed( $event->event_id, $destination, $result->message(), $attempts );
 
 		if ( $attempts < EventLog::MAX_ATTEMPTS ) {
 			Queue::enqueue( self::queue_payload( $event ), $destination, Queue::backoff_delay( $attempts ) );
 		}
-	}
-
-	private function attempt_count( string $event_id, string $destination ): int {
-		foreach ( EventLog::recent( 200 ) as $row ) {
-			if ( ( $row['event_id'] ?? '' ) === $event_id && ( $row['destination'] ?? '' ) === $destination ) {
-				return (int) ( $row['attempts'] ?? 0 );
-			}
-		}
-		return 0;
 	}
 
 	/**

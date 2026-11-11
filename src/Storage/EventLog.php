@@ -48,7 +48,24 @@ final class EventLog {
 			)
 		);
 
-		return (bool) $inserted;
+		// ON DUPLICATE KEY reports 2 when it updated an existing row. Only a fresh
+		// insert may queue a delivery, or a re-fired hook queues a second one while
+		// the first is still pending or backing off.
+		return 1 === (int) $inserted;
+	}
+
+	public static function attempts( string $event_id, string $destination ): int {
+		global $wpdb;
+		$table = Schema::table();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				'SELECT attempts FROM %i WHERE event_id = %s AND destination = %s',
+				$table,
+				$event_id,
+				$destination
+			)
+		);
 	}
 
 	public static function already_sent( string $event_id, string $destination ): bool {

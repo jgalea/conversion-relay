@@ -8,6 +8,11 @@ final class Settings {
 
 	private const OPTION = 'wpch_settings';
 
+	private const DEFAULT_EVENTS = array(
+		'google_ads' => array( 'purchase' ),
+		'meta'       => array( 'purchase', 'add_to_cart', 'begin_checkout', 'view_item', 'search', 'register', 'subscribe', 'form_submission', 'donation' ),
+	);
+
 	/** @var array<string,mixed>|null */
 	private static ?array $cache = null;
 
@@ -56,6 +61,19 @@ final class Settings {
 		$all     = self::all();
 		$channel = $all['sources'][ $id ]['channel'] ?? 'both';
 		return in_array( $channel, array( 'server_only', 'client_only', 'both' ), true ) ? (string) $channel : 'both';
+	}
+
+	/**
+	 * Whether a destination takes this event type. An unset list means the
+	 * destination's default: every event, except where a type would be miscounted
+	 * as a conversion or has no standard name on the platform.
+	 */
+	public static function dest_accepts( string $id, string $type ): bool {
+		$events = self::dest_config( $id )['events'] ?? null;
+		if ( ! is_array( $events ) ) {
+			$events = self::DEFAULT_EVENTS[ $id ] ?? null;
+		}
+		return null === $events || in_array( $type, $events, true );
 	}
 
 	public static function dest_enabled( string $id ): bool {

@@ -33,6 +33,12 @@ final class NormalizedEvent {
 	/** @var array<string,mixed> */
 	public array $meta;
 
+	/** @var array<string,bool>|null Consent recorded in the visitor's own request: marketing, statistics, dnt. */
+	public ?array $consent;
+
+	/** True when the source supplied identity itself, so the hub must not read the current request. */
+	public bool $identity_resolved;
+
 	/**
 	 * @param array<string,mixed> $args
 	 */
@@ -50,6 +56,9 @@ final class NormalizedEvent {
 		$this->user_data = is_array( $args['user_data'] ?? null ) ? $args['user_data'] : array();
 		$this->identity  = is_array( $args['identity'] ?? null ) ? $args['identity'] : array();
 		$this->meta      = is_array( $args['meta'] ?? null ) ? $args['meta'] : array();
+
+		$this->consent           = is_array( $args['consent'] ?? null ) ? $args['consent'] : null;
+		$this->identity_resolved = array_key_exists( 'identity', $args );
 	}
 
 	/**
@@ -95,6 +104,7 @@ final class NormalizedEvent {
 			'user_data'      => $this->user_data,
 			'identity'       => $this->identity,
 			'meta'           => $this->meta,
+			'consent'        => $this->consent,
 		);
 	}
 
