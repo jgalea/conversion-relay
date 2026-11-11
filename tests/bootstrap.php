@@ -60,6 +60,7 @@ function wpch_test_reset(): void { // phpcs:ignore
 	$GLOBALS['wpch_test_http_code']  = 200;
 	$GLOBALS['wpch_test_scheduled']  = array();
 	$GLOBALS['wpch_test_orders']     = array();
+	$GLOBALS['wpch_test_orders_by_email'] = array();
 	$GLOBALS['wpch_test_search']     = '';
 	$GLOBALS['wpch_test_checkout']   = false;
 	$GLOBALS['wpch_test_wc']         = null;

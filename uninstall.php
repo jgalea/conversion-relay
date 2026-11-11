@@ -15,6 +15,16 @@ foreach ( $wpch_sites as $wpch_site ) {
 		switch_to_blog( (int) $wpch_site );
 	}
 
+	delete_metadata( 'post', 0, '_wpch_visitor', '', true );
+	foreach ( array( 'wc_orders_meta', 'edd_ordermeta' ) as $wpch_meta_table ) {
+		$wpch_meta_table = $wpdb->prefix . $wpch_meta_table;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $wpch_meta_table ) ) ) === $wpch_meta_table ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE meta_key = %s', $wpch_meta_table, '_wpch_visitor' ) );
+		}
+	}
+
 	delete_option( 'wpch_settings' );
 	delete_option( 'wpch_db_version' );
 	delete_option( 'wpch_ads_events_migrated' );

@@ -16,6 +16,7 @@ final class FakeWpdb {
 		$this->pdo = new \PDO( 'sqlite::memory:' );
 		$this->pdo->setAttribute( \PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION );
 		$this->pdo->exec( 'CREATE TABLE wp_options (option_name TEXT PRIMARY KEY, option_value TEXT)' );
+		$this->pdo->exec( 'CREATE TABLE wp_wc_orders_meta (id INTEGER PRIMARY KEY AUTOINCREMENT, meta_key TEXT, meta_value TEXT)' );
 		$this->pdo->exec(
 			'CREATE TABLE wp_wpch_events (
 				id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -60,6 +61,10 @@ final class FakeWpdb {
 	}
 
 	public function get_var( string $sql ) {
+		if ( 0 === strpos( $sql, 'SHOW TABLES LIKE' ) ) {
+			preg_match( "/'([^']+)'/", $sql, $m );
+			return $this->table_exists( $m[1] ) ? $m[1] : null;
+		}
 		$value = $this->pdo->query( $sql )->fetchColumn();
 		return false === $value ? null : $value;
 	}
@@ -78,6 +83,14 @@ final class FakeWpdb {
 
 	public function insert_option( string $name ): void {
 		$this->pdo->exec( 'INSERT INTO wp_options VALUES (' . $this->pdo->quote( $name ) . ', "x")' );
+	}
+
+	public function count_meta( string $table ): int {
+		return (int) $this->pdo->query( "SELECT COUNT(*) FROM {$table}" )->fetchColumn();
+	}
+
+	public function insert_meta( string $table, string $key ): void {
+		$this->pdo->exec( "INSERT INTO {$table} (meta_key, meta_value) VALUES (" . $this->pdo->quote( $key ) . ", 'x')" );
 	}
 
 	public function table_exists( string $table ): bool {

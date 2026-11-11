@@ -50,6 +50,8 @@ final class Plugin {
 			add_filter( 'wp_consent_api_registered_' . plugin_basename( WPCH_FILE ), '__return_true' );
 		}
 
+		Support\Privacy::hooks();
+
 		( new Frontend( $this->registry, $this->dispatcher ) )->hooks();
 
 		if ( is_admin() ) {

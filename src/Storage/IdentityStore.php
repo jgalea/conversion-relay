@@ -31,6 +31,10 @@ final class IdentityStore {
 		return is_array( $identity ) ? $identity : array();
 	}
 
+	public static function forget( string $event_id ): void {
+		delete_transient( self::key( $event_id ) );
+	}
+
 	private static function key( string $event_id ): string {
 		return 'wpch_id_' . substr( $event_id, 0, 32 );
 	}

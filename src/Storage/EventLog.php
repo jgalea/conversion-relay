@@ -68,6 +68,20 @@ final class EventLog {
 		);
 	}
 
+	public static function unsent_count( string $event_id ): int {
+		global $wpdb;
+		$table = Schema::table();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				'SELECT COUNT(*) FROM %i WHERE event_id = %s AND status <> %s',
+				$table,
+				$event_id,
+				self::STATUS_SENT
+			)
+		);
+	}
+
 	public static function already_sent( string $event_id, string $destination ): bool {
 		global $wpdb;
 		$table = Schema::table();

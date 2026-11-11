@@ -192,6 +192,9 @@ Yes. Register your own source or destination with `wpch_register_source` /
 == Changelog ==
 
 = Unreleased =
+* Order tracking data (IP, user agent and click ids saved with WooCommerce and Easy Digital Downloads orders) is included in the personal data export and erasure tools and removed on uninstall. The per-event copy is deleted once every destination has it.
+* The browser bridge applies the same consent and event-list rules as the server, and Google Consent Mode starts denied in the page head.
+* Anonymous add-to-cart, download and public events are rate limited and deduplicated.
 * Google Ads counts purchases only by default. Other events need a label and need ticking under "Send these events". A site that already had a conversion label keeps its form, subscription, registration and donation events going to it, and gets a one-time notice about the lists.
 * Each destination has its own event list, and Meta defaults to its standard events.
 * Purchases and refunds use the buyer's identity and consent saved at checkout, not the request of whoever marks the order complete. Renewals use the initial order's. An order with no saved decision is sent to ad platforms only when consent gating is off, and then without browser identity.

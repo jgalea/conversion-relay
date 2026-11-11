@@ -52,6 +52,9 @@ final class FakeOrder {
 	public function update_meta_data( string $key, $value ): void {
 		$this->meta[ $key ] = $value;
 	}
+	public function delete_meta_data( string $key ): void {
+		unset( $this->meta[ $key ] );
+	}
 	public function save_meta_data(): void {}
 }
 

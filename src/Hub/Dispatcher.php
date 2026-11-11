@@ -176,6 +176,9 @@ final class Dispatcher {
 
 		if ( $result->ok() ) {
 			EventLog::mark_sent( $event->event_id, $destination, $result->message() );
+			if ( 0 === EventLog::unsent_count( $event->event_id ) ) {
+				IdentityStore::forget( $event->event_id );
+			}
 			return;
 		}
 

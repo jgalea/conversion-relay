@@ -87,6 +87,9 @@ function spawn_cron() {
 function wc_get_order( $id ) {
 	return $GLOBALS['wpch_test_orders'][ (int) $id ] ?? false;
 }
+function wc_get_orders( $args = array() ) {
+	return $GLOBALS['wpch_test_orders_by_email'][ $args['billing_email'] ?? '' ] ?? array();
+}
 function is_search() {
 	return ! empty( $GLOBALS['wpch_test_search'] );
 }
