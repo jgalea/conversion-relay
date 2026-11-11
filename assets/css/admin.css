@@ -1,0 +1,96 @@
+.wpch-dest {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	margin-block-end: 8px;
+}
+
+.wpch-dest > summary {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5em 0.75em;
+	padding: 0.75em 1em;
+	cursor: pointer;
+	font-weight: 600;
+}
+
+.wpch-dest-body {
+	padding: 0.25em 1em 1em;
+	border-block-start: 1px solid #f0f0f1;
+}
+
+.wpch-chip {
+	padding: 0.1em 0.6em;
+	border-radius: 1em;
+	background: #f0f0f1;
+	font-size: 12px;
+	font-weight: 400;
+}
+
+.wpch-chip.is-on {
+	background: #edfaef;
+	color: #00450c;
+}
+
+.wpch-chip.is-warn {
+	background: #fcf9e8;
+	color: #614200;
+}
+
+.wpch-field {
+	display: grid;
+	gap: 0.25em;
+	margin-block: 0.75em;
+	max-inline-size: 32rem;
+}
+
+.wpch-field input[type="text"],
+.wpch-field input[type="password"] {
+	inline-size: 100%;
+}
+
+.wpch-field .description {
+	margin: 0;
+}
+
+.wpch-events {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+	gap: 0.25em 1em;
+	margin: 0.5em 0 0;
+	padding: 0;
+	border: 0;
+}
+
+.wpch-events legend {
+	padding: 0;
+	font-weight: 600;
+}
+
+.wpch-test-result pre {
+	max-block-size: 16em;
+	overflow: auto;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.wpch-sources th,
+.wpch-sources td {
+	vertical-align: middle;
+}
+
+.wpch-status-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5em;
+	margin-block: 1em;
+}
+
+.wpch-table-scroll {
+	overflow-x: auto;
+}
+
+.wpch-legend {
+	margin-block: 0.5em 1em;
+}

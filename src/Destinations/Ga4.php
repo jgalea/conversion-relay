@@ -15,6 +15,7 @@ use WPConversionHub\Event\NormalizedEvent;
 final class Ga4 extends AbstractDestination {
 
 	private const MP_ENDPOINT = 'https://www.google-analytics.com/mp/collect';
+	private const MP_DEBUG    = 'https://www.google-analytics.com/debug/mp/collect';
 
 	public function id(): string {
 		return 'ga4';
@@ -82,7 +83,7 @@ final class Ga4 extends AbstractDestination {
 				'measurement_id' => $this->get( 'measurement_id' ),
 				'api_secret'     => $api_secret,
 			),
-			self::MP_ENDPOINT
+			empty( $event->meta['wpch_debug'] ) ? self::MP_ENDPOINT : self::MP_DEBUG
 		);
 
 		$body = array(

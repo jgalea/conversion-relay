@@ -6,6 +6,8 @@ defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
 
 global $wpdb;
 
+delete_metadata( 'user', 0, 'wpch_notice_dismissed', '', true );
+
 $wpch_sites = is_multisite() ? get_sites( array( 'fields' => 'ids' ) ) : array( 0 );
 
 foreach ( $wpch_sites as $wpch_site ) {
