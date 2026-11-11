@@ -102,7 +102,11 @@
 		},
 		google_ads: function ( cfg, ev ) {
 			ensureGtag( cfg.conversion_id );
-			var sendTo = cfg.conversion_label ? cfg.conversion_id + '/' + cfg.conversion_label : cfg.conversion_id;
+			var label = ( cfg.labels && cfg.labels[ ev.type ] ) || ( ev.type === 'purchase' ? cfg.conversion_label : '' );
+			if ( ! label && ev.type !== 'purchase' ) {
+				return;
+			}
+			var sendTo = label ? cfg.conversion_id + '/' + label : cfg.conversion_id;
 			var params = { send_to: sendTo };
 			if ( ev.value != null ) params.value = ev.value;
 			if ( ev.currency ) params.currency = ev.currency;
@@ -274,7 +278,10 @@
 			var params = {};
 			if ( ev.value != null ) params.value = ev.value;
 			if ( ev.currency ) params.currency = ev.currency;
-			window.twq( 'event', 'tw-' + cfg.pixel_id + '-' + ev.type, params );
+			var eventId = cfg.event_ids && cfg.event_ids[ ev.type ];
+			if ( eventId ) {
+				window.twq( 'event', eventId, params );
+			}
 		}
 	};
 

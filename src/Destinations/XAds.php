@@ -24,13 +24,30 @@ final class XAds extends AbstractDestination {
 	}
 
 	public function settings_fields(): array {
-		return array(
-			'pixel_id' => array(
+		$fields = array(
+			'pixel_id'          => array(
 				'label'  => __( 'Pixel ID', 'conversion-relay' ),
 				'type'   => 'text',
 				'secret' => false,
 			),
+			'event_id_purchase' => array(
+				'label'  => __( 'Purchase event ID', 'conversion-relay' ),
+				'type'   => 'text',
+				'secret' => false,
+				'help'   => __( 'The event ID from the X Ads event setup, for example tw-abc12-abc34.', 'conversion-relay' ),
+			),
 		);
+
+		foreach ( self::conversion_types() as $type => $label ) {
+			$fields[ 'event_id_' . $type ] = array(
+				/* translators: %s: event name, e.g. "Form submission". */
+				'label'  => sprintf( __( '%s event ID', 'conversion-relay' ), $label ),
+				'type'   => 'text',
+				'secret' => false,
+			);
+		}
+
+		return $fields;
 	}
 
 	protected function required_keys(): array {
@@ -38,6 +55,12 @@ final class XAds extends AbstractDestination {
 	}
 
 	public function client_config(): array {
-		return array( 'pixel_id' => $this->get( 'pixel_id' ) );
+		return array(
+			'pixel_id'  => $this->get( 'pixel_id' ),
+			'event_ids' => array_merge(
+				array_filter( array( 'purchase' => $this->get( 'event_id_purchase' ) ) ),
+				$this->per_type_values( 'event_id_' )
+			),
+		);
 	}
 }

@@ -33,6 +33,38 @@ abstract class AbstractDestination implements DestinationInterface {
 		return DeliveryResult::failure( __( 'Server transport not implemented.', 'conversion-relay' ) );
 	}
 
+	/**
+	 * Event types a platform needs its own conversion id or label for.
+	 *
+	 * @return array<string,string> type => label
+	 */
+	protected static function conversion_types(): array {
+		return array(
+			'form_submission' => __( 'Form submission', 'conversion-relay' ),
+			'add_to_cart'     => __( 'Add to cart', 'conversion-relay' ),
+			'begin_checkout'  => __( 'Begin checkout', 'conversion-relay' ),
+			'register'        => __( 'Registration', 'conversion-relay' ),
+			'subscribe'       => __( 'Subscription', 'conversion-relay' ),
+			'donation'        => __( 'Donation', 'conversion-relay' ),
+		);
+	}
+
+	/**
+	 * Saved values for the per-event-type fields named "<prefix><type>".
+	 *
+	 * @return array<string,string> type => value, empty values left out
+	 */
+	protected function per_type_values( string $prefix ): array {
+		$values = array();
+		foreach ( array_keys( self::conversion_types() ) as $type ) {
+			$value = $this->get( $prefix . $type );
+			if ( '' !== $value ) {
+				$values[ $type ] = $value;
+			}
+		}
+		return $values;
+	}
+
 	protected function get( string $key, string $default = '' ): string {
 		$cfg = Settings::dest_config( $this->id() );
 		$val = $cfg[ $key ] ?? $default;
