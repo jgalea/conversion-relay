@@ -4,6 +4,8 @@ declare( strict_types=1 );
 
 namespace WPConversionHub\Hub;
 
+use WPConversionHub\Storage\EventLog;
+
 /**
  * Durable async delivery. Uses Action Scheduler when present (WooCommerce bundles
  * it), otherwise falls back to a single wp-cron event. Never blocks the request
@@ -34,6 +36,27 @@ final class Queue {
 
 		wp_schedule_single_event( time() + max( 1, $delay ), self::HOOK, array( $args ) );
 		spawn_cron();
+	}
+
+	/**
+	 * Re-queue log rows for another round of attempts. The log keeps no customer
+	 * data, so a retry carries the visitor identity only while IdentityStore
+	 * still holds it, and no hashed user data.
+	 *
+	 * @param array<int,array<string,mixed>> $rows
+	 */
+	public static function retry_rows( array $rows ): int {
+		$queued = 0;
+		foreach ( $rows as $row ) {
+			$payload = json_decode( (string) ( $row['payload'] ?? '' ), true );
+			if ( ! is_array( $payload ) ) {
+				continue;
+			}
+			EventLog::reset_for_retry( (string) $row['event_id'], (string) $row['destination'] );
+			self::enqueue( $payload, (string) $row['destination'] );
+			++$queued;
+		}
+		return $queued;
 	}
 
 	public static function backoff_delay( int $attempts ): int {

@@ -175,7 +175,7 @@ completes a sale is never held up waiting on an analytics or ad platform.
 = Where do delivery errors show up? =
 
 Settings → Conversion Relay → Status lists recent delivery attempts, including
-failures and retries. `wp conversion-hub status` shows the same from WP-CLI.
+failures and retries. `wp conversion-relay status` shows the same from WP-CLI.
 
 = Can I add a platform that isn't listed? =
 

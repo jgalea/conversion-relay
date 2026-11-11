@@ -11,7 +11,7 @@ use WPConversionHub\Storage\EventLog;
 use WPConversionHub\Support\Settings;
 
 /**
- * WP-CLI: wp conversion-hub <status|destinations|test-event|retry>
+ * WP-CLI: wp conversion-relay <status|destinations|test-event|retry>, also available as wp conversion-hub.
  */
 final class Commands {
 
@@ -104,18 +104,13 @@ final class Commands {
 	}
 
 	/**
-	 * Re-queue failed / dead-lettered deliveries.
+	 * Re-queue dead-lettered deliveries and failed ones that are no longer waiting on a retry.
+	 *
+	 * Retries carry no hashed customer data, and the visitor's IP and user agent
+	 * only while they are still stored, which is one day.
 	 */
 	public function retry(): void {
-		$n = 0;
-		foreach ( EventLog::recent( 200, EventLog::STATUS_FAILED ) as $row ) {
-			$payload = json_decode( (string) ( $row['payload'] ?? '' ), true );
-			if ( ! is_array( $payload ) ) {
-				continue;
-			}
-			\WPConversionHub\Hub\Queue::enqueue( $payload, (string) $row['destination'] );
-			++$n;
-		}
+		$n = \WPConversionHub\Hub\Queue::retry_rows( EventLog::stuck() );
 		\WP_CLI::success(
 			sprintf(
 				/* translators: %d: number of deliveries re-queued. */

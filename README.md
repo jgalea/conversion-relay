@@ -74,10 +74,10 @@ composer lint    # PHPCS (WordPress standards)
 ## WP-CLI
 
 ```bash
-wp conversion-hub status         # delivery counts by status
-wp conversion-hub destinations   # registered destinations, enabled + configured
-wp conversion-hub test-event     # dispatch a synthetic event
-wp conversion-hub retry          # re-queue failed deliveries
+wp conversion-relay status         # delivery counts by status
+wp conversion-relay destinations   # registered destinations, enabled + configured
+wp conversion-relay test-event     # dispatch a synthetic event
+wp conversion-relay retry          # re-queue failed deliveries
 ```
 
 ## License

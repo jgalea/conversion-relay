@@ -258,4 +258,27 @@ final class DataIntegrityTest extends TestCase {
 		}
 		$this->assertLessThanOrEqual( 3, count( $this->events ), 'searches share the REST budget' );
 	}
+
+	public function testStatusFiltersAndRetryOnlyTouchRowsThatAreNotWaiting(): void {
+		EventLog::record_pending( 'a', 'meta', 'purchase', 'woocommerce', '1', array( 'type' => 'purchase', 'source' => 'woocommerce' ) );
+		EventLog::record_pending( 'b', 'ga4', 'purchase', 'woocommerce', '2', array( 'type' => 'purchase', 'source' => 'woocommerce' ) );
+		EventLog::record_pending( 'c', 'meta', 'purchase', 'woocommerce', '3', array( 'type' => 'purchase', 'source' => 'woocommerce' ) );
+		EventLog::mark_failed( 'a', 'meta', 'boom', 1 );
+		EventLog::mark_failed( 'b', 'ga4', 'boom', EventLog::MAX_ATTEMPTS );
+		EventLog::mark_sent( 'c', 'meta' );
+
+		$this->assertSame( 3, EventLog::count( '', '' ) );
+		$this->assertSame( 2, EventLog::count( '', 'meta' ) );
+		$this->assertSame( 1, EventLog::count( 'dead', '' ) );
+		$this->assertCount( 1, EventLog::page( 'sent', 'meta', 25, 0 ) );
+
+		// 'a' just failed and has a backoff action pending, so only the dead row is stuck.
+		$stuck = EventLog::stuck();
+		$this->assertCount( 1, $stuck );
+		$this->assertSame( 'b', $stuck[0]['event_id'] );
+
+		$this->assertSame( 1, \WPConversionHub\Hub\Queue::retry_rows( $stuck ) );
+		$this->assertSame( 0, EventLog::attempts( 'b', 'ga4' ) );
+		$this->assertCount( 1, $GLOBALS['wpch_test_scheduled'] );
+	}
 }

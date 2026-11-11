@@ -71,5 +71,6 @@ final class PrivacyTest extends TestCase {
 		$this->assertSame( 'wpch', $GLOBALS['wpch_test_unscheduled_group'] );
 		$this->assertContains( 'wpch_deliver_event', $GLOBALS['wpch_test_unscheduled_hooks'] );
 		$this->assertArrayNotHasKey( 'wpch_settings', $GLOBALS['wpch_test_options'] );
+		$this->assertContains( 'wpch_notice_dismissed', $GLOBALS['wpch_test_deleted_meta'] );
 	}
 }

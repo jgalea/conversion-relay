@@ -115,3 +115,7 @@ function wp_unschedule_hook( $hook ) {
 function wp_http_validate_url( $url ) {
 	return filter_var( $url, FILTER_VALIDATE_URL ) ? $url : false;
 }
+function delete_metadata( $type, $id, $key, $value = '', $all = false ) {
+	$GLOBALS['wpch_test_deleted_meta'][] = $key;
+	return true;
+}
