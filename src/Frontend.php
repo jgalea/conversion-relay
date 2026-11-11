@@ -14,7 +14,7 @@ use WPConversionHub\Support\Settings;
 /**
  * Owns the browser side: enqueues the bridge, hands it the enabled client
  * destinations plus the redirect-safe queue of pending pixel events, and exposes
- * a REST endpoint for client-origin events (scroll, time on page, play).
+ * a REST endpoint for client-origin events (play, click).
  */
 final class Frontend {
 
@@ -168,7 +168,7 @@ final class Frontend {
 
 		$meta = $request->get_param( 'meta' );
 		$meta = is_array( $meta ) ? $meta : array();
-		if ( count( $meta ) > 20 || strlen( (string) wp_json_encode( $meta ) ) > 2000 ) {
+		if ( count( $meta ) > 20 || false === wp_json_encode( $meta, 0, 3 ) || strlen( (string) wp_json_encode( $meta ) ) > 2000 ) {
 			$meta = array();
 		}
 		$meta = map_deep( $meta, 'sanitize_text_field' );
