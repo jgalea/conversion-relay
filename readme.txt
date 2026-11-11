@@ -191,6 +191,13 @@ Yes. Register your own source or destination with `wpch_register_source` /
 
 == Changelog ==
 
+= Unreleased =
+* Google Ads counts purchases only by default. Other events need a label and need ticking under "Send these events".
+* Each destination has its own event list, and Meta defaults to its standard events.
+* Purchases and refunds use the buyer's identity and consent saved at checkout, not the request of whoever marks the order complete. Renewals use the initial order's. An order with no saved decision is sent to ad platforms only when consent gating is off, and then without browser identity.
+* X uses a per-event ID when one is set and the previous tw-<pixel>-<event> name otherwise.
+* The user agent is sent to Meta and other ad platforms again, and later submissions of the same form, product or course are no longer dropped.
+
 = 0.3.1 =
 * Customer data is no longer written to the delivery queue in the clear. It is
   hashed when enhanced conversions are on and omitted when they are off, so
