@@ -86,13 +86,12 @@ final class QueuePayloadTest extends TestCase {
 		$this->assertSame( array(), $payload['user_data'] );
 	}
 
-	public function testUserAgentIsNotQueued(): void {
+	public function testIdentityIsNotQueued(): void {
 		$this->setEnhanced( true );
 		$payload = $this->payload( $this->event() );
 
-		$this->assertArrayNotHasKey( 'user_agent', $payload['identity'] );
-		// The IP survives: destinations that need it are sending it on anyway.
-		$this->assertSame( '203.0.113.9', $payload['identity']['ip'] );
+		$this->assertSame( array(), $payload['identity'] );
+		$this->assertStringNotContainsString( '203.0.113.9', (string) wp_json_encode_fallback( $payload ) );
 	}
 
 	/**
