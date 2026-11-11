@@ -259,6 +259,20 @@ final class DataIntegrityTest extends TestCase {
 		$this->assertLessThanOrEqual( 3, count( $this->events ), 'searches share the REST budget' );
 	}
 
+	public function testDroppedPublicEventsLeaveNoDedupeRows(): void {
+		$source = new Core();
+		$source->register( $this->dispatcher );
+
+		wpch_test_filter( 'wpch_rest_rate_limit', static fn() => 3 );
+		foreach ( range( 1, 50 ) as $n ) {
+			$GLOBALS['wpch_test_search'] = 'q' . $n;
+			$source->maybe_search();
+		}
+
+		$once = array_filter( array_keys( $GLOBALS['wpch_test_transients'] ), static fn( $k ) => 0 === strpos( $k, 'wpch_once_' ) );
+		$this->assertCount( 3, $once, 'only events that passed the limiter write a dedupe row' );
+	}
+
 	public function testStatusFiltersAndRetryOnlyTouchRowsThatAreNotWaiting(): void {
 		EventLog::record_pending( 'a', 'meta', 'purchase', 'woocommerce', '1', array( 'type' => 'purchase', 'source' => 'woocommerce' ) );
 		EventLog::record_pending( 'b', 'ga4', 'purchase', 'woocommerce', '2', array( 'type' => 'purchase', 'source' => 'woocommerce' ) );

@@ -39,11 +39,12 @@ abstract class AbstractSource implements SourceInterface {
 		if ( false !== get_transient( $transient ) ) {
 			return;
 		}
+		if ( ! RateLimit::ok() ) {
+			return;
+		}
 		set_transient( $transient, 1, HOUR_IN_SECONDS );
 
-		if ( RateLimit::ok() ) {
-			$this->emit( $args );
-		}
+		$this->emit( $args );
 	}
 
 	/**
