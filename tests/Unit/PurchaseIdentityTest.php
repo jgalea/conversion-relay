@@ -203,4 +203,39 @@ final class PurchaseIdentityTest extends TestCase {
 
 		$this->assertCount( 1, $this->events );
 	}
+
+	public function testOrderWithNoDecisionIsSentWithoutIdentityWhenConsentGatingIsOff(): void {
+		$this->configure( $this->metaServer(), array( 'consent' => array( 'require_consent' => false ) ) );
+		$GLOBALS['wpch_test_orders'][506] = new FakeOrder( 506 );
+		$this->admin_request();
+
+		$source = new WooCommerce();
+		$source->register( $this->dispatcher );
+		$source->on_paid( 506 );
+		$this->dispatcher->deliver( $this->queued()[0] );
+
+		$user = json_decode( $GLOBALS['wpch_test_http'][0]['args']['body'], true )['data'][0]['user_data'];
+		$this->assertArrayNotHasKey( 'client_user_agent', $user, 'the admin request must not stand in for the buyer' );
+		$this->assertArrayNotHasKey( 'fbp', $user );
+		$this->assertArrayNotHasKey( 'client_ip_address', $user );
+	}
+
+	public function testRenewalInheritsIdentityAndConsentFromTheInitialOrder(): void {
+		$this->configure( $this->metaServer(), array( 'consent' => array( 'ads_default' => 'granted' ) ) );
+		$initial = new FakeOrder( 507 );
+		$this->buyer_checkout( $initial );
+		$renewal = new FakeOrder( 508 );
+		$GLOBALS['wpch_test_orders'][508] = $renewal;
+		$GLOBALS['wpch_test_subscription_parent'] = $initial;
+		$this->admin_request();
+
+		$source = new WooCommerce();
+		$source->register( $this->dispatcher );
+		$source->on_paid( 508 );
+		$this->dispatcher->deliver( $this->queued()[0] );
+
+		$user = json_decode( $GLOBALS['wpch_test_http'][0]['args']['body'], true )['data'][0]['user_data'];
+		$this->assertSame( 'BuyerBrowser', $user['client_user_agent'] );
+		$this->assertSame( 'fb.1.buyer', $user['fbp'] );
+	}
 }

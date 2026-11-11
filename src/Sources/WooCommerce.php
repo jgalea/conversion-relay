@@ -53,6 +53,31 @@ final class WooCommerce extends AbstractSource {
 		$order->save_meta_data();
 	}
 
+	/**
+	 * The snapshot saved on the order, or on the initial order of the subscription
+	 * a renewal belongs to, since a renewal is paid with no visitor present.
+	 *
+	 * @param object $order
+	 * @return mixed
+	 */
+	private function visitor_meta( $order ) {
+		$stored = $order->get_meta( self::VISITOR_META );
+		if ( '' !== $stored && false !== $stored ) {
+			return $stored;
+		}
+
+		if ( function_exists( 'wcs_get_subscriptions_for_order' ) ) {
+			foreach ( wcs_get_subscriptions_for_order( $order, array( 'order_type' => 'any' ) ) as $subscription ) {
+				$parent = method_exists( $subscription, 'get_parent' ) ? $subscription->get_parent() : null;
+				if ( is_object( $parent ) && '' !== $parent->get_meta( self::VISITOR_META ) ) {
+					return $parent->get_meta( self::VISITOR_META );
+				}
+			}
+		}
+
+		return '';
+	}
+
 	public function on_payment_complete( int $order_id ): void {
 		$this->emit_purchase( $order_id );
 	}
@@ -133,7 +158,7 @@ final class WooCommerce extends AbstractSource {
 						'order_id'  => $order_id,
 					),
 				),
-				$this->stored_visitor( $order->get_meta( self::VISITOR_META ) )
+				$this->stored_visitor( $this->visitor_meta( $order ) )
 			)
 		);
 	}
@@ -168,7 +193,7 @@ final class WooCommerce extends AbstractSource {
 						)
 					),
 				),
-				$this->stored_visitor( $order->get_meta( self::VISITOR_META ) )
+				$this->stored_visitor( $this->visitor_meta( $order ) )
 			)
 		);
 	}

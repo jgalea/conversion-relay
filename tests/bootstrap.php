@@ -63,6 +63,7 @@ function wpch_test_reset(): void { // phpcs:ignore
 	$GLOBALS['wpch_test_search']     = '';
 	$GLOBALS['wpch_test_checkout']   = false;
 	$GLOBALS['wpch_test_wc']         = null;
+	$GLOBALS['wpch_test_subscription_parent'] = null;
 	$GLOBALS['wpdb']                 = new \WPConversionHub\Tests\Support\FakeWpdb();
 	$_COOKIE                         = array();
 	$_SERVER['REMOTE_ADDR']          = '203.0.113.9';

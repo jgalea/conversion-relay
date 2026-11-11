@@ -119,3 +119,17 @@ function delete_metadata( $type, $id, $key, $value = '', $all = false ) {
 	$GLOBALS['wpch_test_deleted_meta'][] = $key;
 	return true;
 }
+function wcs_get_subscriptions_for_order( $order, $args = array() ) {
+	$parent = $GLOBALS['wpch_test_subscription_parent'] ?? null;
+	return $parent ? array(
+		new class( $parent ) {
+			private $parent;
+			public function __construct( $parent ) {
+				$this->parent = $parent;
+			}
+			public function get_parent() {
+				return $this->parent;
+			}
+		},
+	) : array();
+}

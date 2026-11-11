@@ -56,6 +56,14 @@ final class Edd extends AbstractSource {
 			? edd_get_order_meta( $order_id, self::VISITOR_META, true )
 			: get_post_meta( $order_id, self::VISITOR_META, true );
 
+		if ( ! is_string( $raw ) || '' === $raw ) {
+			$order  = function_exists( 'edd_get_order' ) ? edd_get_order( $order_id ) : null;
+			$parent = is_object( $order ) && ! empty( $order->parent ) ? (int) $order->parent : (int) get_post_field( 'post_parent', $order_id );
+			if ( $parent > 0 && $parent !== $order_id ) {
+				return $this->stored( $parent );
+			}
+		}
+
 		return $this->stored_visitor( $raw );
 	}
 
