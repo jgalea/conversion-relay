@@ -38,10 +38,11 @@ final class TutorLMS extends AbstractSource {
 		$this->emit(
 			array(
 				'type'      => EventType::ENROLL,
-				'entity_id' => is_scalar( $course_id ) ? (string) $course_id : '',
+				'entity_id' => is_scalar( $enrol_id ) ? (string) $enrol_id : '',
 				'meta'      => array(
-					'user_id'  => $user_id,
-					'enrol_id' => $enrol_id,
+					'course_id' => $course_id,
+					'user_id'   => $user_id,
+					'enrol_id'  => $enrol_id,
 				),
 			)
 		);

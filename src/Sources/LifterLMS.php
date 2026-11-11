@@ -38,10 +38,11 @@ final class LifterLMS extends AbstractSource {
 		$this->emit(
 			array(
 				'type'      => EventType::ENROLL,
-				'entity_id' => (string) $course_id,
+				'entity_id' => '',
 				'meta'      => array(
-					'object'  => 'course',
-					'user_id' => $user_id,
+					'object'    => 'course',
+					'course_id' => $course_id,
+					'user_id'   => $user_id,
 				),
 			)
 		);
@@ -55,10 +56,11 @@ final class LifterLMS extends AbstractSource {
 		$this->emit(
 			array(
 				'type'      => EventType::ENROLL,
-				'entity_id' => (string) $lesson_id,
+				'entity_id' => '',
 				'meta'      => array(
-					'object'  => 'lesson',
-					'user_id' => $user_id,
+					'object'    => 'lesson',
+					'lesson_id' => $lesson_id,
+					'user_id'   => $user_id,
 				),
 			)
 		);

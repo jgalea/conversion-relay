@@ -46,8 +46,11 @@ final class DownloadMonitor extends AbstractSource {
 		$this->emit(
 			array(
 				'type'      => EventType::FILE_DOWNLOAD,
-				'entity_id' => $entity_id,
-				'meta'      => array( 'title' => $title ),
+				'entity_id' => '',
+				'meta'      => array(
+					'download_id' => $entity_id,
+					'title'       => $title,
+				),
 			)
 		);
 	}

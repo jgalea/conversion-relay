@@ -41,10 +41,11 @@ final class LearnDash extends AbstractSource {
 		$this->emit(
 			array(
 				'type'      => EventType::ENROLL,
-				'entity_id' => $this->id_from_value( $data['course'] ?? '' ),
+				'entity_id' => '',
 				'meta'      => array(
-					'object'  => 'course',
-					'user_id' => $this->id_from_value( $data['user'] ?? '' ),
+					'object'    => 'course',
+					'course_id' => $this->id_from_value( $data['course'] ?? '' ),
+					'user_id'   => $this->id_from_value( $data['user'] ?? '' ),
 				),
 			)
 		);
@@ -61,10 +62,11 @@ final class LearnDash extends AbstractSource {
 		$this->emit(
 			array(
 				'type'      => EventType::ENROLL,
-				'entity_id' => $this->id_from_value( $data['lesson'] ?? '' ),
+				'entity_id' => '',
 				'meta'      => array(
-					'object'  => 'lesson',
-					'user_id' => $this->id_from_value( $data['user'] ?? '' ),
+					'object'    => 'lesson',
+					'lesson_id' => $this->id_from_value( $data['lesson'] ?? '' ),
+					'user_id'   => $this->id_from_value( $data['user'] ?? '' ),
 				),
 			)
 		);
