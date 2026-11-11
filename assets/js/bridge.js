@@ -297,6 +297,30 @@
 		}
 	} );
 
+	function postEvent( body, retry ) {
+		try {
+			fetch( data.restUrl, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': data.nonce },
+				body: body,
+				keepalive: true
+			} ).then( function ( res ) {
+				if ( res.status !== 403 || ! retry ) {
+					return;
+				}
+				// Cached pages carry a stale nonce: fetch a fresh one and retry once.
+				fetch( data.restUrl.replace( /\/event$/, '/nonce' ), { cache: 'no-store' } )
+					.then( function ( r ) { return r.json(); } )
+					.then( function ( json ) {
+						if ( json && json.nonce ) {
+							data.nonce = json.nonce;
+							postEvent( body, false );
+						}
+					} );
+			} ).catch( function () {} );
+		} catch ( e ) {}
+	}
+
 	// Public API for custom + client-origin events.
 	window.wpch = window.wpch || {};
 	window.wpch.track = function ( type, params ) {
@@ -311,14 +335,7 @@
 		fire( ev, params.destinations );
 
 		if ( data.restUrl && params.server !== false ) {
-			try {
-				fetch( data.restUrl, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': data.nonce },
-					body: JSON.stringify( { type: type, value: ev.value, meta: params.meta || {}, url: location.href } ),
-					keepalive: true
-				} );
-			} catch ( e ) {}
+			postEvent( JSON.stringify( { type: type, value: ev.value, meta: params.meta || {}, url: location.href } ), true );
 		}
 	};
 

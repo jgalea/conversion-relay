@@ -7,6 +7,7 @@ namespace WPConversionHub;
 use WPConversionHub\Destinations\DestinationInterface;
 use WPConversionHub\Hub\ClientQueue;
 use WPConversionHub\Hub\Dispatcher;
+use WPConversionHub\Hub\RateLimit;
 use WPConversionHub\Support\Registry;
 use WPConversionHub\Support\Settings;
 
@@ -17,8 +18,6 @@ use WPConversionHub\Support\Settings;
  */
 final class Frontend {
 
-	private const RATE_KEY_GLOBAL = 'wpch_rl_global';
-
 	private Registry $registry;
 	private Dispatcher $dispatcher;
 
@@ -28,9 +27,20 @@ final class Frontend {
 	}
 
 	public function hooks(): void {
+		add_action( 'template_redirect', array( $this, 'keep_out_of_page_cache' ), 0 );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue' ) );
 		add_action( 'wp_footer', array( $this, 'print_data' ), 5 );
 		add_action( 'rest_api_init', array( $this, 'register_rest' ) );
+	}
+
+	public function keep_out_of_page_cache(): void {
+		if ( ! ClientQueue::has_pending() ) {
+			return;
+		}
+		if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+			define( 'DONOTCACHEPAGE', true );
+		}
+		nocache_headers();
 	}
 
 	public function enqueue(): void {
@@ -103,6 +113,22 @@ final class Frontend {
 				'callback'            => array( $this, 'rest_event' ),
 			)
 		);
+
+		// A cached page keeps the nonce it was rendered with, which expires after a
+		// day. The bridge fetches a fresh one here when a post comes back 403.
+		register_rest_route(
+			'wpch/v1',
+			'/nonce',
+			array(
+				'methods'             => 'GET',
+				'permission_callback' => '__return_true',
+				'callback'            => static function () {
+					$response = new \WP_REST_Response( array( 'nonce' => wp_create_nonce( 'wp_rest' ) ), 200 );
+					$response->header( 'Cache-Control', 'no-store' );
+					return $response;
+				},
+			)
+		);
 	}
 
 	/**
@@ -123,7 +149,7 @@ final class Frontend {
 	public function rest_event( $request ) {
 		// Answer 200 when throttled so a caller cannot use the status code to
 		// probe where the limit sits. Nothing is dispatched either way.
-		if ( ! $this->rest_rate_ok() ) {
+		if ( ! RateLimit::ok() ) {
 			return new \WP_REST_Response( array( 'ok' => true ), 200 );
 		}
 
@@ -161,39 +187,5 @@ final class Frontend {
 		);
 
 		return new \WP_REST_Response( array( 'ok' => true ), 200 );
-	}
-
-	/**
-	 * Per-IP and site-wide budgets for the public endpoint.
-	 *
-	 * REMOTE_ADDR is the proxy's address on any site behind Cloudflare or a load
-	 * balancer, which put every visitor in one bucket: one caller could exhaust
-	 * it and silence everyone else's events. Sites on a trusted proxy supply the
-	 * real address through wpch_client_ip; the forwarded headers are never read
-	 * unconditionally, because anyone can set them. The site-wide budget bounds
-	 * the aggregate regardless of how many addresses a caller can spread across.
-	 */
-	private function rest_rate_ok(): bool {
-		$remote = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'anon';
-		$ip     = (string) apply_filters( 'wpch_client_ip', $remote );
-		$ip     = '' === $ip ? 'anon' : $ip;
-
-		$per_ip = (int) apply_filters( 'wpch_rest_rate_limit', 60 );
-		$global = (int) apply_filters( 'wpch_rest_rate_limit_global', 600 );
-
-		$ip_key  = 'wpch_rl_' . md5( $ip );
-		$ip_hits = (int) get_transient( $ip_key );
-		if ( $ip_hits >= $per_ip ) {
-			return false;
-		}
-
-		$all_hits = (int) get_transient( self::RATE_KEY_GLOBAL );
-		if ( $all_hits >= $global ) {
-			return false;
-		}
-
-		set_transient( $ip_key, $ip_hits + 1, MINUTE_IN_SECONDS );
-		set_transient( self::RATE_KEY_GLOBAL, $all_hits + 1, MINUTE_IN_SECONDS );
-		return true;
 	}
 }
