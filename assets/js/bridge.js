@@ -31,12 +31,41 @@
 		document.head.appendChild( s );
 	}
 
+	// Google Consent Mode v2 signals: the configured defaults, replaced by the
+	// visitor's own choice when the WP Consent API has one.
+	function consentSignals( changed ) {
+		var c = data.consent;
+		var ads = c.ads;
+		var stats = c.analytics;
+		if ( typeof window.wp_has_consent === 'function' ) {
+			ads = window.wp_has_consent( 'marketing' );
+			stats = window.wp_has_consent( 'statistics' );
+		}
+		if ( changed ) {
+			if ( changed.marketing ) ads = changed.marketing === 'allow';
+			if ( changed.statistics ) stats = changed.statistics === 'allow';
+		}
+		var adState = ads ? 'granted' : 'denied';
+		return {
+			ad_storage: adState,
+			ad_user_data: adState,
+			ad_personalization: adState,
+			analytics_storage: stats ? 'granted' : 'denied'
+		};
+	}
+
 	function ensureGtag( id ) {
 		window.dataLayer = window.dataLayer || [];
 		if ( ! window.gtag ) {
 			window.gtag = function () {
 				window.dataLayer.push( arguments );
 			};
+			if ( data.consent ) {
+				window.gtag( 'consent', 'default', consentSignals() );
+				document.addEventListener( 'wp_listen_for_consent_change', function ( e ) {
+					window.gtag( 'consent', 'update', consentSignals( e.detail ) );
+				} );
+			}
 			window.gtag( 'js', new Date() );
 		}
 		if ( id && ! loaded[ 'gtag-config-' + id ] ) {

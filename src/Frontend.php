@@ -88,7 +88,16 @@ final class Frontend {
 			return;
 		}
 
+		$consent = Settings::consent();
+		$signals = ! empty( $consent['require_consent'] ) && ( isset( $configs['ga4'] ) || isset( $configs['google_ads'] ) )
+			? array(
+				'ads'       => 'granted' === ( $consent['ads_default'] ?? 'denied' ),
+				'analytics' => 'granted' === ( $consent['analytics_default'] ?? 'granted' ),
+			)
+			: null;
+
 		$data = array(
+			'consent'      => $signals,
 			'restUrl'      => esc_url_raw( rest_url( 'wpch/v1/event' ) ),
 			'nonce'        => wp_create_nonce( 'wp_rest' ),
 			'destinations' => $configs,
